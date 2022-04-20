@@ -1,24 +1,48 @@
 #!usr/bin/python3
 
+# Proteogenome
+# Version: 2.3
+#
+# Author: Giammarco Ferrari
+#
+# Last Update: 14/04/2022
+#
+# List of functions:
+#
+#  annot_to_df
+#  check_format
+#  file_to_lst
+#  locus_tag_substitution
+#  print_lst
+#  prot_index
+#  protein_set_bed
+#  rectify_rows
+
+#
 import numpy as np
 import pandas as pd
 import re
 
-class HCMV:
+
+
+
+class Organism:
           
     def __init__(self, FASTA_filename='', annot_filename='', upload_files=True):
-        """
-        Version: 1.1
-        Author: Giammarco Ferrari
-        Thank you for using Proteogenome!!!
-        """
-        if FASTA_filename: self.FASTA_filename=FASTA_filename
-        if annot_filename: self.annot_filename=annot_filename
-        self.prot_index = {} # Prepare the data structure for the protein index
-
-        if upload_files:
+        # """
+        # Version: 1.1
+        # Author: Giammarco Ferrari
+        # Thank you for using Proteogenome!!!
+        # """
+        if FASTA_filename!='': 
+            self.FASTA_filename=FASTA_filename
             self.FASTA_lst=self.file_to_lst(self.FASTA_filename)
+        if annot_filename!='': 
+            self.annot_filename=annot_filename
             self.annot_lst=self.file_to_lst(self.annot_filename)
+
+        self.prot_index = {} # Prepare the data structure for the protein index
+                        
     	
 
     def file_to_lst(self, file_name):
@@ -46,19 +70,28 @@ class HCMV:
         return file_in_lst
 
     
-    def print_lst(self, input_list, limit):
+    def print_lst(self, input_list, limit=0, en_sep=True, sep_type='-'):
         """
-        Version : 1.0
+        Version : 2.0
+
+        Name History : print_lst (from Proteogenome 1.0)
 
         Print the list content limitely to the element indicated by the parameter 'limit'. 
-        INPUT  : input_list     List      Items to print
-                 limit          Int       Number of items to print 
+        INPUT:  input_list  List    Items to print.
+                limit       Int     Number of items to print. 
+                en_sept     Bool    Enable the separation of each element of the list with a string.
+                sep_type    Char    The character that will make up the separator string.   
+
         
         OUTPUT :
         """
+
         for ind, i in enumerate(input_list):
             if ind < limit:
                 print(i)
+                if en_sep: print(sep_type * 100)
+
+
 
     def annot_to_df(self, annotations, annot_format ='gff3'):
         """
@@ -78,17 +111,18 @@ class HCMV:
         # **************** Parsing file for GFF3 format
         if annot_format =='gff3':
             unique_pat = re.compile(r'(.*?)\t')
-            ID_pat = re.compile(r'.*?\tID=(.*?);')            # specific patterns for the annotation of the GFF3 format
-            gene_pat = re.compile(r'.*?;gene=(.*?);')
+            ID_pat = re.compile(r'.*?\tID=(.*?);')            # specific patterns for the 
+            gene_pat = re.compile(r'.*?;gene=(.*?);')         # annotation in GFF3 format
             product_pat = re.compile(r'.*?;product=(.*?)$')
             col_index=[2, 3, 4, 6]
 
         elif annot_format == 'gtf':
             unique_pat = re.compile(r'(.*?)\t')
-            pass
+            ID_pat = re.compile(r'.*?\sgene_id\s\"(.*?)\";')   # specific patterns for the 
+            gene_pat = re.compile(r'.*?;\sgene\s\"(.*?)\";')   # annotation in GTF format
+            product_pat = re.compile(r'.*?;\sproduct\s\"(.*?)\"$')
+            col_index=[2, 3, 4, 6]
 
-
-        #for row in annotations_fh:
         for row in annotations:
 
             if (row[0]!='#') and ('country=United Kingdom: Cardiff;culture-collection=ATCC' not in row): 
@@ -130,12 +164,38 @@ class HCMV:
 
         #return self.GFF3_to_df
        
+                
 
-
-    def prot_index(self, annot_df):
+    def annot_matrix(self, annotations, annot_format='gff3'):
         """
-        Version:
-        Name History:
+        Version: 1.0
+
+        Name History: annot_matrix
+
+        This function receives a list of annotations rows and fit them in a matrix (numpy)
+        """
+
+        first=True
+        for row in annotations:
+            if row[0]!='#':                                               
+                if first:
+                    row_array=np.array(row.split('\t'),dtype=object)          # Split the current annotation rows in columns
+                    self.annotation_matrix = np.array([row_array]) # increase the annotation matrix dimension
+                    first=False
+                else:
+                    row_array=np.array(row.split('\t'),dtype=object)
+                    self.annotation_matrix = np.concatenate((self.annotation_matrix, [row_array]))
+                    # print('*'*50)
+                    # print(self.annotation_matrix)
+                    # a=input()
+
+        self.CDS_matrix=self.annotation_matrix[self.annotation_matrix[:,2]=='CDS'] # Filter only for coding regions 
+        
+
+    def protein_index(self, annotations, annot_format='gff3'):
+        """
+        Version: 2.0
+        Name History: prot_index
         Generate a dictionary of proteins ID ('gene' field) as key and the exon structure in a list as value.
             Example:
              {'RL1'   : []
@@ -145,42 +205,41 @@ class HCMV:
               }
 
         INPUT :
-        OUTPUT:
+        OUTPUT: .prot_index     Dict    The protein index with the CDS coordinates.
+                                        Key  [Str]              Protein ID
+                                        Value[List][List][Str]  CDS coordinates = start,end,strand  
         """
-        #self.prot_index = {}
-
-        #print(annot_df['gene'])
-        prot_gene_lst=set(annot_df['gene'].tolist())
-        # print(len(prot_gene_lst))
-
         
-        for prot_gene in prot_gene_lst:
-            #if prot_gene=='UL150A':print(f'--- --- {prot_gene} BLOCK --- --- ')
-            #print(prot_gene)
-            if prot_gene != 'gene PASS': # Only if exist a gene (otherwise means that it is a non-coding region)
-                # Extract the exons that belong to the gene structure 
-                #print('extract prot_block')
-                prot_block = annot_df[(annot_df['gene']==prot_gene) & (annot_df['row_type']=='CDS')][['coordinate1', 'coordinate2', 'strand']]
-                #print('prot_block --- ',prot_block)
-                for exon in prot_block.iterrows(): # Coordinates and strand of the exons in the each protein come from a groupby object 
-                    #if prot_gene=='UL150A':print('exon --- ',exon)
-                    #print('iterate prot_block')
-                    exon_feat=[]                   # What I want is ti have a list of lists where avery sublist is a exon representation 
-                    for feat in exon[1]:   # exon is a pandas serie and the index 1 get the table of the exons           
-                        exon_feat.append(feat)
-                        #print('append exon_feat')
-                    #if prot_gene=='UL150A':print('exon_feat --- ',exon_feat)
-                    if (prot_gene in self.prot_index):
-                        if (exon_feat!=[]) & (exon_feat not in self.prot_index[prot_gene]):
-                            self.prot_index[prot_gene].append(exon_feat) # Append the features of the actual exon on the list 
-                                                                         # of exons that belongs to the actual protein.
-                    else:
-                        self.prot_index[prot_gene]=[exon_feat]
+        # **************** Parsing annotations in GFF3 format
+        if annot_format =='gff3':                             # specific patterns for the 
+            gene_pat = re.compile(r'.*?;gene=(.*?);')         # annotation in GFF3 format
 
-                #if prot_gene=='UL150A':print(exon_feat)
-                #a=input()
 
-            #return self.prot_index
+        # **************** Parsing annotations in GTF format
+        elif annot_format == 'gtf':                           # specific patterns for the 
+            gene_pat = re.compile(r'.*?;\sgene\s\"(.*?)\";')   # annotation in GTF format
+
+        for row in annotations:
+
+            strand=row[6]
+            
+            if strand=='+':
+                coord_1=row[3]
+                coord_2=row[4]
+            else:             # If the coding region is in reverse starnd
+                coord_1=row[4]
+                coord_2=row[3]
+
+            protein_ID=gene_pat.match(row[-1]).group(1) # Find the current protein identifier.
+
+            CDS_feat=[coord_1, coord_2, strand]
+
+            if (protein_ID in annotations):
+                # Append the features of the current CDS on the list of CDS that belongs to the current protein.
+                self.prot_index[protein_ID].append(CDS_feat) 
+                                                                  
+            else:
+                self.prot_index[protein_ID]=[CDS_feat]
 
 
 # ****************************************************************************************** #
@@ -189,14 +248,18 @@ class HCMV:
     
     def rectify_rows(self, list_rows, target_sub_str=[], target_patterns=[]):
         """
+        Version: 1.0
+
+        Name History: rectify_rows
+
         This function recive a list of rows. Therefore cleans every single row replacing the 
         target substrings with the proper substitution.
         Target substrings can be substitute in two ways:
                 - precise patterns: are substrings known before the substituting operation 
                                     and are applied through the command ".replace()".
-                - generic patterns: substrings that can change in the but with the same 
-                                    repeated structure. This type of substring must be set as
-                                    regerx Python patterns enclosed in ''.
+                - generic patterns: substrings that can change in the file rows but with the  
+                                    same repeated structure. This type of substring must be 
+                                    set as regerx Python patterns enclosed in ''.
                                       
         INPUT : list_rows           List    List of rows to clean
                 target_sub_str      List    List of tuples of two elements. Replacement through 
@@ -232,6 +295,33 @@ class HCMV:
 
         return list_rows
     
+    def FASTA_cpt_seq(self, list_rows):
+        """
+        Version: 1.0
+
+        Name History: FASTA_cpt_seq
+
+        This function compact the sequence after each FASTA header.
+        It is possible that FASTA files downloaded from online sources could have
+        the sequences splitted in multiple rows by '\n'. 
+        The purpose is to arrange each sequence in a unique string.
+
+        INPUT : list_rows   List[Str]   List of rows of a FASTA file. 
+        OUTPUT: seq_compa   List[Str]   List of rows of a FASTA file with the sequences
+                                        compacted in unique rows. 
+        """    
+        seq_compa=[]
+        sequence_row=''
+
+        for row in list_rows:    
+            if row[0]=='>':                         
+                if sequence_row!='':               # If the sequence line is empty but there is a FASTA header than this is the first header.
+                    seq_compa.append(sequence_row) # Otherwise, it is a sequence that belongs to the current header and then it can be appended.
+                seq_compa.append(row)              # If the current line is a FASTA header then append to the list.
+                sequence_row=''                    # This means that you are expecting for a new sequence into the next rows.
+            else:
+                sequence_row += row  # Append the current part of sequence to the whole sequence.
+        return  seq_compa
 
 
     def check_format(self, list_rows):
@@ -295,11 +385,10 @@ class HCMV:
         for row in FASTA_lst:
             if row[0] =='>':
                 target_tag=locus_tag_patt.search(row).group(1)
-                #print(row)
                 row=row.replace('locus_tag='+target_tag, 
                                 'gene:'+target_tag+' transcript:'+target_tag)
-                                #gene:gene-   The first suggestion was to add gene:gene-
-                                #             But later       
+                                #gene:gene-   The first suggestion was to add gene:gene- but later was to remove them.
+
             FASTA_lst4PoGo.append(row)
                 #print(row)
                 #a=input()
@@ -307,8 +396,11 @@ class HCMV:
 
 
 
-    def protein_set_bed(self, prot_list=[], bed_fn='protein_track.bed'):
+    def protein_track(self, prot_list=[], bed_fn='protein_track.bed'):
         """
+        Version: 1.0
+
+        Name History: protein_set_bed - protein_track
         Receive a list of protein codes and create the .bed track with the genomic locations of the protins.
         Example of multi exon protein in input:
           UL37 - [['52573', '53060', '-'], ['51302', '51344', '-'], ['50262', '51197', '-']]
@@ -383,7 +475,85 @@ class HCMV:
         prot_track_fh.close()
 
             #print(f'{protein} - {self.prot_index[protein]}')
+# *************************************************************************************** #
+# ********************************** Proteogenome DEMO ********************************** #
 
+    def dummy_peptides(self, prot_sequences_FASTA_fn, pep_min_length=4, pep_max_length=30):
+        """
+        Version: 1.0
+
+        Name History: generate_peptides - dummy_peptides
+
+        This function performs the synthetic trypsinisation of a protein sequence FASTA file.
+        The output is a dictionary with the protein ID as key and the protein sequence as value.
+
+        INPUT : prot_sequences_FASTA_fn   Str   File name of protein FASTA sequence file.
+                pep_max_length  Int       Max lenght of the generated peptides.
+                pep_min_length  Int       Min lenght of the generated peptides.
+        OUTPUT: peptides        Dict      Key: [Str]    Protein ID.
+                                          Val: [Str]    Protein sequence.       
+        """
+        FASTA_in_lst = self.file_to_lst(prot_sequences_FASTA_fn) # Upload the FASTA file with protein sequences in a list 
+        FASTA_in_lst = self.FASTA_cpt_seq(FASTA_in_lst)          # Compact possible multilines sequences       
+
+        peptides = []
+        for prot_sequence in FASTA_in_lst:
+            if prot_sequence != '>':
+    #         print(prot_sequence)
+            prot_sequence = prot_sequence.replace('\n','')
+            prot_sequence = prot_sequence.replace('K','|')  # LYSINE
+            prot_sequence = prot_sequence.replace('R','|')  # ARGININE      
+    #         print(prot_sequence)
+            
+            new_peptides = prot_sequence.split('|') # The protein sequence is now a list of peptides
+    #         print(new_peptides)
+            
+            append_peptides = []
+            for pep in new_peptides:
+                if (len(pep) >= pep_min_length) & (len(pep) <= pep_max_length): # Filter the peptides with the lenght criteria
+                    append_peptides.append(pep)
+    #         print(append_peptides)    
+            
+            if len(append_peptides) > 0:
+                peptides += append_peptides            
+            
+    #         a=input()
+        return peptides
+
+
+    def dummy_input_(self, peptides, out_file_name, dummy_exp_name = 'exp1',
+                            ):
+        """
+        Version: 1.0
+
+        Name History: dummy_PoGo_peptides  
+
+        This function generates a file .txt that contains dummy peptides in a format suitable for PoGo software.
+
+        INPUT : peptides        List[Str]   List of peptide sequence.
+                out_file_name   Str         Name of the file that will contains the dummy peptides.
+                dummy_exp_name  Str         Dummy experiment name.
+        OUTPUT:
+        """
+
+        PSM   = np.ones(len(peptides,), dtype=int)
+        inten = np.random.randint(1000, 10000, len(peptides), dtype=int)
+        
+        fh = open(out_file_name, 'w')
+        for ind, pep in enumerate(peptides):
+            row = ''
+    #         print(pep)
+            row += dummy_exp_name + '\t' + pep + '\t' + str(PSM[ind]) + '\t' + str(inten[ind]) + '\n'
+    #         print(row)
+            fh.write(row)
+    #         a=input()
+        fh.close()
+
+    def Proteogenome_demo(self, prot_quantity=10, pep_length_range=[], 
+                          pep_int_range=[50,5000], PTM_ptg=0):
+    """
+    This function generates dummy peptide table
+    """
 
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
 #                                              M - A - I - N                                           #
@@ -464,13 +634,13 @@ if __name__ == '__main__':
 
     print(f'Creating Protein index')
     print(' ************ DISABLED IN THE CODE ************ ')
-    # #HCMV_instance.prot_index(HCMV_instance.GFF3_to_df)
+    # #HCMV_instance.prot_index_from_df(HCMV_instance.GFF3_to_df)
     # print(HCMV_instance.prot_index)
-    # print(f'**done** \n')
+    # print(f'**done** \n')S
 
     print('Create .bed track for the whole protein set of the HCMV')
 
     # protein_list_test=['RL1', 'UL29', 'UL150A']
-    # HCMV_instance.protein_set_bed()
+    # HCMV_instance.protein_track()
     # print('hello world ....... at the end!!!!!')
 
