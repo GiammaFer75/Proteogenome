@@ -77,6 +77,7 @@ class Organism:
         Name History : print_lst (from Proteogenome 1.0)
 
         Print the list content limitely to the element indicated by the parameter 'limit'. 
+
         INPUT:  input_list  List    Items to print.
                 limit       Int     Number of items to print. 
                 en_sept     Bool    Enable the separation of each element of the list with a string.
@@ -96,8 +97,11 @@ class Organism:
     def annot_to_df(self, annotations, annot_format ='gff3'):
         """
         Version: 1.0
+
         Name History: annot_to_df
-        Extract relevant data from the annotation file and put them in a DataFrame
+        
+        This function extracts relevant data from the annotation file and put them in a DataFrame
+        
         INPUT : annotations     List    List list filled with the annotation rows
         OUTPUT:
         """
@@ -144,16 +148,16 @@ class Organism:
                 try:
                     new_row['ID'] = ID_pat.match(row).group(1)
                 except:
-                    new_row['ID'] = 'ID PASS'
+                    new_row['ID'] = 'ID nf'
                 try:
                     new_row['gene'] = gene_pat.match(row).group(1)
                 except:
-                    new_row['gene'] = 'gene PASS'
+                    new_row['gene'] = 'gene nf'
                 try:
                     new_row['product'] = product_pat.match(row).group(1)
                     new_row['product'] = new_row['product'].split(';')[0]
                 except:
-                    new_row['product'] = 'product PASS'  
+                    new_row['product'] = 'product nf'  
 
                 #print(new_row) 
 
@@ -230,7 +234,12 @@ class Organism:
                 coord_1=row[4]
                 coord_2=row[3]
 
-            protein_ID=gene_pat.match(row[-1]).group(1) # Find the current protein identifier.
+            try:
+                protein_ID=gene_pat.match(row[-1]).group(1) # Find the current protein identifier.
+            except:
+                print('ERROR')
+                print(row)
+                a=input()
 
             CDS_feat=[coord_1, coord_2, strand]
 
@@ -475,14 +484,15 @@ class Organism:
         prot_track_fh.close()
 
             #print(f'{protein} - {self.prot_index[protein]}')
+
 # *************************************************************************************** #
 # ********************************** Proteogenome DEMO ********************************** #
 
-    def dummy_peptides(self, prot_sequences_FASTA_fn, pep_min_length=4, pep_max_length=30):
+    def dummy_peptides_index(self, prot_sequences_FASTA_fn, pep_min_length=4, pep_max_length=30):
         """
         Version: 1.0
 
-        Name History: generate_peptides - dummy_peptides
+        Name History: generate_peptides - dummy_peptides_index
 
         This function performs the synthetic trypsinisation of a protein sequence FASTA file.
         The output is a dictionary with the protein ID as key and the protein sequence as value.
@@ -499,34 +509,34 @@ class Organism:
         peptides = []
         for prot_sequence in FASTA_in_lst:
             if prot_sequence != '>':
-    #         print(prot_sequence)
-            prot_sequence = prot_sequence.replace('\n','')
-            prot_sequence = prot_sequence.replace('K','|')  # LYSINE
-            prot_sequence = prot_sequence.replace('R','|')  # ARGININE      
-    #         print(prot_sequence)
-            
-            new_peptides = prot_sequence.split('|') # The protein sequence is now a list of peptides
-    #         print(new_peptides)
-            
-            append_peptides = []
-            for pep in new_peptides:
-                if (len(pep) >= pep_min_length) & (len(pep) <= pep_max_length): # Filter the peptides with the lenght criteria
-                    append_peptides.append(pep)
-    #         print(append_peptides)    
-            
-            if len(append_peptides) > 0:
-                peptides += append_peptides            
+      #         print(prot_sequence)
+                prot_sequence = prot_sequence.replace('\n','')
+                prot_sequence = prot_sequence.replace('K','|')  # LYSINE
+                prot_sequence = prot_sequence.replace('R','|')  # ARGININE      
+        #         print(prot_sequence)
+                
+                new_peptides = prot_sequence.split('|') # The protein sequence is now a list of peptides
+        #         print(new_peptides)
+                
+                append_peptides = []
+                for pep in new_peptides:
+                    if (len(pep) >= pep_min_length) & (len(pep) <= pep_max_length): # Filter the peptides with the lenght criteria
+                        append_peptides.append(pep)
+        #         print(append_peptides)    
+                
+                if len(append_peptides) > 0:
+                    peptides += append_peptides            
             
     #         a=input()
         return peptides
 
 
-    def dummy_input_(self, peptides, out_file_name, dummy_exp_name = 'exp1',
+    def dummy_input(self, peptides, out_file_name, dummy_exp_name = 'exp1',
                             ):
         """
         Version: 1.0
 
-        Name History: dummy_PoGo_peptides  
+        Name History: dummy_PoGo_peptides - dummy_input   
 
         This function generates a file .txt that contains dummy peptides in a format suitable for PoGo software.
 
@@ -549,11 +559,13 @@ class Organism:
     #         a=input()
         fh.close()
 
-    def Proteogenome_demo(self, prot_quantity=10, pep_length_range=[], 
+    def Proteogenome_Demo(self, prot_quantity=10, pep_length_range=[], 
                           pep_int_range=[50,5000], PTM_ptg=0):
-    """
-    This function generates dummy peptide table
-    """
+        """
+        This function generates dummy peptide table
+        INPUT :
+        OUTPUT:
+        """
 
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
 #                                              M - A - I - N                                           #
@@ -634,7 +646,7 @@ if __name__ == '__main__':
 
     print(f'Creating Protein index')
     print(' ************ DISABLED IN THE CODE ************ ')
-    # #HCMV_instance.prot_index_from_df(HCMV_instance.GFF3_to_df)
+    # #HCMV_instance.protein_index(HCMV_instance.GFF3_to_df)
     # print(HCMV_instance.prot_index)
     # print(f'**done** \n')S
 
