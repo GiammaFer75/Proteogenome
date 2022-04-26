@@ -26,7 +26,6 @@ import re
 
 
 
-
 class Organism:
           
     def __init__(self, FASTA_filename='', annot_filename='', upload_files=True):
@@ -43,7 +42,7 @@ class Organism:
             self.annot_lst=self.file_to_lst(self.annot_filename)
 
         self.prot_CDS_index = {}         # Prepare the dictionary for the protein ---> CDS index
-        self.protein_peptide_index = {}  # Prepare the dictionary for the protein ---> peptide index
+        self.prot_peptide_index = {}  # Prepare the dictionary for the protein ---> peptide index
                         
     	
 
@@ -258,7 +257,7 @@ class Organism:
 
             CDS_feat=[coord_1, coord_2, strand]
 
-            if (protein_ID in annotations):
+            if (protein_ID in self.prot_CDS_index):
                 # Append the features of the current CDS on the list of CDS that belongs to the current protein.
                 self.prot_CDS_index[protein_ID].append(CDS_feat) 
                                                                   
@@ -271,7 +270,7 @@ class Organism:
         protein_peptide_block=pep_input_table[pep_input_table[:,0]==protein_ID]
         return protein_peptide_block
 
-    def protein_peptide_index(self, pep_input_table):
+    def protein_peptide_index(self, pep_input_table):# 
         """
         Version: 1.0
 
@@ -286,15 +285,30 @@ class Organism:
                                             (Value) [List][List][Str]   peptides = 
                                                                         pepsequence, intensisty
         """
+        
         prot_ID_array = np.unique(pep_input_table[:, 0]) # Extract the protein IDs
-        
+
         self.prot_pep_index = {}              # Initialise the index 
-        
         for protein in prot_ID_array:
             peptides_block =  self.groupby_protein(pep_input_table, protein) # Group the peptides that belong to the current protein.
+            
+            
             # print(peptides_block)
             # print('--------------'*5)
+
             self.prot_pep_index[protein] = peptides_block
+
+    def protein_PSM_int_index(self):
+
+        self.prot_PSMint_index = {}
+        
+        for protein, pep_array in self.prot_pep_index.items():
+            PSM_sum=0
+            inten_sum=0
+            for pep_row in pep_array:
+                PSM_sum+=int(pep_row[2])
+                inten_sum+=int(pep_row[3])
+            self.prot_PSMint_index[protein]=[PSM_sum, inten_sum]
             
 # ****************************************************************************************** #
 # ******************************* FILE MANIPULATION FOR PoGo ******************************* #
@@ -700,7 +714,8 @@ class Organism:
                     rand_intensity=np.array(randrange(pep_int_range[0],pep_int_range[1]))
                     current_prot_pep=np.append(current_prot_pep,[rand_intensity],axis=0)
                     dummy_input_matrix=np.concatenate((dummy_input_matrix, [current_prot_pep]))
-        #print(self.dummy_input_matrix)
+        
+        dummy_input_matrix=np.delete(dummy_input_matrix,0,0) # Remove the first initialisation row
         
 
         #************* Output File creation
@@ -820,6 +835,7 @@ class Organism:
         INPUT :
         OUTPUT:
         """
+
 
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
 #                                              M - A - I - N                                           #
