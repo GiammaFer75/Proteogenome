@@ -231,7 +231,7 @@ class Organism:
                                         (Value) [List][List][Str]   CDS coordinates = 
                                                                     chr,start,end,strand  
         """
-        self.prot_CDS_index = {}
+        #self.prot_CDS_index = {}
         
         # **************** Parsing annotations in GFF3 format
         if annot_format =='gff3':                             # specific patterns for the 
@@ -253,12 +253,10 @@ class Organism:
                 coord_1=row[4]
                 coord_2=row[3]
 
-            try:
-                protein_ID=gene_pat.match(row[-1]).group(1) # Find the current protein identifier.
-            except:
-                print('ERROR')
-                print(row)
-                a=input()
+            protein_ID=gene_pat.match(row[-1]).group(1) # Find the current protein identifier.
+            # print(row)
+            # print(protein_ID)
+            # print('-----------------------')   
 
             CDS_feat=[coord_1, coord_2, strand]
 
@@ -397,16 +395,16 @@ class Organism:
         RGB_tup = generate_color_gradient(color_lst=['gray','blue','green','yellow','red'],
                                              reverse_gradient=False)
         prot_expressions_rescaled = exprlev_resc_RGB(intensities,RGB_tup)
-        print(len(prot_expressions_rescaled))
+        #print(len(prot_expressions_rescaled))
         prot_expressions_RGB=vectorise_RGB_tuples(RGB_tup, prot_expressions_rescaled)
 
         print(f'{len(prot_expressions_RGB)} - {len(self.prot_CDS_index)}')
-        print(prot_expressions_RGB)
-        print(self.prot_CDS_index)
+        #print(prot_expressions_RGB)
+        #print(self.prot_CDS_index)
 
         ind=0
         for prot, PSMint in self.prot_CDS_index.items(): # Update the dictionary of self.prot_CDS_index with the RGB intensities
-            self.prot_CDS_index[prot].append(prot_expressions_RGB[ind])
+            self.prot_PSMint_index[prot].append(prot_expressions_RGB[ind])
             ind+=1
 
 # ****************************************************************************************** #
@@ -611,11 +609,12 @@ class Organism:
             tickEnd = chromEnd
             blockCount = str(len(CDS_block))
 
-            itemRGB = "255.0.0"
+            itemRGB = self.prot_PSMint_index[protein][2]  # Fetch the protein intensity into the proper index
 
             blockSizes_str = ''
             blockStarts_str = ''
             for CDS in CDS_block:
+                print('CDSb',CDS_block)
                 if Strand =='+':
                     CDS_start=int(CDS[0])
                     CDS_end=int(CDS[1])
@@ -831,6 +830,33 @@ class Organism:
             fh.close()
 
         return dummy_input_matrix
+    
+    def prot_not_represented(self, CDS_ind, pep_ind):
+        """
+        Version: 1.0
+
+        History Name :
+
+        This function cleans the self.prot_CDS_index class attribute of 
+        protein codes that are not present in the self.prot_pep_index attribute class.
+        The reason for the discrepancy comes from the dummy_input function. 
+        Here two thresholds have been set to define the length of the 
+        dummy peptides (max - min).
+        This could generate the case that some proteins are not represented in the 
+        self.prot_pep_index attribute because none of its dummy peptides met the length 
+        requirements set for the simulation..
+
+        INPUT :
+        OUTPUT:
+        """
+        for protein in list(CDS_ind.keys()): # Consider only the protein IDs
+            if protein not in list(list(pep_ind.keys())):
+                del CDS_ind[protein]
+
+        # for protein in list(self.prot_CDS_index.keys()): # Consider only the protein IDs
+        #     if protein not in list(list(self.prot_pep_index.keys())):
+        #         del self.prot_CDS_index[protein]
+        return CDS_ind
 
 
     def dummy_input_nparrays(self, peptides='', out_file_name='', dummy_exp_name = 'exp1',
