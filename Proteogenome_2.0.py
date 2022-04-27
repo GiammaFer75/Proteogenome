@@ -5,20 +5,9 @@
 #
 # Author: Giammarco Ferrari
 #
-# Last Update: 14/04/2022
-#
-# List of functions:
-#
-#  annot_to_df
-#  check_format
-#  file_to_lst
-#  locus_tag_substitution
-#  print_lst
-#  prot_index
-#  protein_set_bed
-#  rectify_rows
+# Last Update: 27/04/2022
+# it's time to package https://www.tutorialsteacher.com/python/python-package
 
-#
 import numpy as np
 import pandas as pd
 from random import randrange
@@ -29,7 +18,8 @@ import re
 
 class Organism:
           
-    def __init__(self, FASTA_filename='', annot_filename='', upload_files=True):
+    def __init__(self, FASTA_filename='', annot_filename='', 
+                 input_table_filename='', upload_files=True):
         # """
         # Version: 1.1
         # Author: Giammarco Ferrari
@@ -41,10 +31,13 @@ class Organism:
         if annot_filename!='': 
             self.annot_filename=annot_filename
             self.annot_lst=self.file_to_lst(self.annot_filename)
+        if input_table_filename!='':
+            self.input_table_filename=input_table_filename
+            self.input_table=self.load_input_table(self.input_table_filename)
 
-        self.prot_CDS_index = {}         # Prepare the dictionary for the protein ---> CDS index
-        self.prot_peptide_index = {}  # Prepare the dictionary for the protein ---> peptide index
-                        
+        self.prot_CDS_index = {}      # Initialise dictionary for protein ---> CDS index
+        self.prot_peptide_index = {}  # Initialise dictionary for protein ---> peptide index
+        self.prot_PSMint_index = {}   # Initialise dictionary for protein ---> PSM - intensity - RGB intensity index     
     	
 
     def file_to_lst(self, file_name):
@@ -94,7 +87,27 @@ class Organism:
                 print(i)
                 if en_sep: print(sep_type * 100)
 
+    def load_input_table(self, filename, sep='\t'):
+        """
+        Version: 1.0
 
+        Name History: load_input_table
+
+        INPUT :
+        OUTPUT:
+        """
+        
+        input_tab=np.array([['','','','','']])
+
+        fh=open(filename, 'r')
+        for row in fh:
+            row=row.split(sep)
+            row=np.array(row)
+            row[-1]=row[-1].replace('\n','')
+            input_tab=np.concatenate([input_tab,[row]], axis=0)
+        fh.close()
+        input_tab=input_tab[1:,:]   # Remove initialisation row
+        return input_tab
 
     def annot_to_df(self, annotations, annot_format ='gff3'):
         """
@@ -172,7 +185,7 @@ class Organism:
        
                 
 
-    def CDS_annot_matrix(self, annotations, annot_format='gff3'):
+    def CDS_annot_matrix(self, annotations):
         """
         Version: 1.0
 
@@ -186,13 +199,15 @@ class Organism:
 
         first=True
         for row in annotations:
-            if row[0]!='#':                                               
+            if row[0]!='#':
+                                                     
                 if first:
                     row_array=np.array(row.split('\t'),dtype=object)          # Split the current annotation rows in columns
                     self.annotation_matrix = np.array([row_array]) # increase the annotation matrix dimension
                     first=False
                 else:
                     row_array=np.array(row.split('\t'),dtype=object)
+                    
                     self.annotation_matrix = np.concatenate((self.annotation_matrix, [row_array]))
                     # print('*'*50)
                     # print(self.annotation_matrix)
@@ -376,8 +391,6 @@ class Organism:
 
         max_intensity=0
         min_intensity=0
-
-        self.prot_PSMint_index = {}
         
         for protein, pep_array in self.prot_pep_index.items():
             PSM_sum=0
@@ -407,6 +420,11 @@ class Organism:
             self.prot_PSMint_index[prot].append(prot_expressions_RGB[ind])
             ind+=1
 
+    def initialise_indexes(self, annot_format='gff3'):
+        """
+        """
+        self.protein_CDS_index(self.CDS_matrix)
+        self.protein_peptide_index()
 # ****************************************************************************************** #
 # ******************************* FILE MANIPULATION FOR PoGo ******************************* #
 
@@ -495,7 +513,7 @@ class Organism:
 
         Name History: check_format
 
-        This function controls if the first column in a datafile contains the expected data.
+        This function controls if the first row in a datafile contains the expected data.
         The default is the GFF3 control where '##' chars represent comment lines and 
         the first column in a .split() row contains the strain identifier.
 
@@ -524,7 +542,7 @@ class Organism:
         if format_control:
             print('FILE FORMAT - OK')
         else:
-            print('XXXXXX  WARNING- WRONG FILE FORMAT  XXXXXX') 
+            print('XXXXXX  WARNING - WRONG FILE FORMAT  XXXXXX') 
 
         print('++ FILE FORMAT CONTROL FINISHED ++')
 
