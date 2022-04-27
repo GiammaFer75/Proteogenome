@@ -203,7 +203,7 @@ class Organism:
 
     def protein_CDS_index(self, annotations, annot_format='gff3'):
         """
-        Version: 2.0
+        Version: 3.0
 
         Name History: prot_index, protein_CDS_index
         
@@ -360,7 +360,7 @@ class Organism:
 
             return rescaled_values
 
-        def vectorise_RGB_touples(RGB_tuples, prot_exp_resc):
+        def vectorise_RGB_tuples(RGB_tuples, prot_exp_resc):
             
             prot_expressions_RGB=[]
 
@@ -398,7 +398,7 @@ class Organism:
                                              reverse_gradient=False)
         prot_expressions_rescaled = exprlev_resc_RGB(intensities,RGB_tup)
         print(len(prot_expressions_rescaled))
-        prot_expressions_RGB=vectorise_RGB_touples(RGB_tup, prot_expressions_rescaled)
+        prot_expressions_RGB=vectorise_RGB_tuples(RGB_tup, prot_expressions_rescaled)
 
         print(f'{len(prot_expressions_RGB)} - {len(self.prot_CDS_index)}')
         print(prot_expressions_RGB)
