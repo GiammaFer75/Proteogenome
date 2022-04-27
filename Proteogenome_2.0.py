@@ -22,6 +22,7 @@
 import numpy as np
 import pandas as pd
 from random import randrange
+from matplotlib import colors
 import re
 
 
@@ -171,13 +172,16 @@ class Organism:
        
                 
 
-    def annot_matrix(self, annotations, annot_format='gff3'):
+    def CDS_annot_matrix(self, annotations, annot_format='gff3'):
         """
         Version: 1.0
 
-        Name History: annot_matrix
+        Name History: annot_matrix, CDS_annot_matrix
 
-        This function receives a list of annotations rows and fit them in a matrix (numpy)
+        This function receives a list of annotations rows and extracts only the block of
+        rows regarding the protein CDS 
+        INPUT :
+        OUTPUT:
         """
 
         first=True
@@ -219,7 +223,8 @@ class Organism:
             - GTF  ----> .*?;\sgene\s\"(.*?)\";
           
 
-        INPUT : annotations
+        INPUT : annotations     [List]  The annotation file stored in a list
+                annot_format    [Str]   Tag that indicates which kind of format the annotation file is.
 
         OUTPUT: .prot_index     [Dict]  The protein index with the CDS coordinates.
                                         (Key)   [Str]               Protein ID
@@ -270,7 +275,7 @@ class Organism:
         protein_peptide_block=pep_input_table[pep_input_table[:,0]==protein_ID]
         return protein_peptide_block
 
-    def protein_peptide_index(self, pep_input_table):# 
+    def protein_peptide_index(self, pep_input_table): 
         """
         Version: 1.0
 
@@ -299,6 +304,80 @@ class Organism:
             self.prot_pep_index[protein] = peptides_block
 
     def protein_PSM_int_index(self):
+        """
+        INPUT :
+        OUTPUT:
+        """
+        import math 
+
+        def generate_color_gradient(color_lst, reverse_gradient=False):
+            """
+            INPUT  :  color_lst     List    List of strings with the colour names that will be compose the colour gradient
+                                            Example: ['black','gray','blue','green','yellow','red']
+            OUTPUT :
+            """
+
+            def colorFader(c1,c2,mix=0): #fade (linear interpolate) from color c1 (at mix=0) to c2 (mix=1)
+                c1=np.array(colors.to_rgb(c1))
+                c2=np.array(colors.to_rgb(c2))
+                return colors.to_rgb((1-mix)*c1 + mix*c2)
+                
+
+            def rgb_block(color1,color2, n_data_point):
+                col = []
+                for data_point in range(n_data_point): 
+                    col.append(colorFader(color1,color2,data_point/n))
+                return col
+
+            n=80
+            color_blocks_lst = []
+            for ind, color in enumerate(color_lst):
+                color_blocks_lst.append([color, color_lst[ind+1]])
+                if ind == (len(color_lst)-2): break
+            gradient =[]
+            for block in color_blocks_lst:
+                gradient += rgb_block(block[0],block[1],n)
+            if reverse_gradient: gradient.reverse()
+            return gradient
+
+        def exprlev_resc_RGB(values,RGB_scale):
+            """
+            """
+            old_max = min(values)
+            old_min = max(values)
+            new_max = len(RGB_scale)
+            new_min = 0
+
+            rescaled_values = []
+
+            for old_value in values:
+                try:
+                    NewValue = int((((old_value - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min)
+                except:
+                    print('{} - {} - {}'.format(old_max, old_min, new_min))
+                    a=input()
+                rescaled_values.append(NewValue)
+
+            return rescaled_values
+
+        def vectorise_RGB_touples(RGB_tuples, prot_exp_resc):
+            
+            prot_expressions_RGB=[]
+
+            for RGB_pos in prot_exp_resc:
+                RGB_toup = [round(num,3) for num in RGB_tuples[RGB_pos-1]]
+                RGB_code = str(RGB_toup[0]) + ',' + str(RGB_toup[1]) + ',' + str(RGB_toup[1])
+                prot_expressions_RGB.append(RGB_code)
+
+            return prot_expressions_RGB
+
+
+        # ------- MAIN ------- protein_PSM_int_index
+        
+        intensities=[]
+
+        max_intensity=0
+        min_intensity=0
 
         self.prot_PSMint_index = {}
         
@@ -309,7 +388,27 @@ class Organism:
                 PSM_sum+=int(pep_row[2])
                 inten_sum+=int(pep_row[3])
             self.prot_PSMint_index[protein]=[PSM_sum, inten_sum]
-            
+            intensities.append(inten_sum)
+
+            if max_intensity<inten_sum: max_intensity=inten_sum    
+            if min_intensity>inten_sum: min_intensity=inten_sum
+        
+        print(f'{len(self.prot_pep_index)} - {len(self.prot_CDS_index)}')
+        RGB_tup = generate_color_gradient(color_lst=['gray','blue','green','yellow','red'],
+                                             reverse_gradient=False)
+        prot_expressions_rescaled = exprlev_resc_RGB(intensities,RGB_tup)
+        print(len(prot_expressions_rescaled))
+        prot_expressions_RGB=vectorise_RGB_touples(RGB_tup, prot_expressions_rescaled)
+
+        print(f'{len(prot_expressions_RGB)} - {len(self.prot_CDS_index)}')
+        print(prot_expressions_RGB)
+        print(self.prot_CDS_index)
+
+        ind=0
+        for prot, PSMint in self.prot_CDS_index.items(): # Update the dictionary of self.prot_CDS_index with the RGB intensities
+            self.prot_CDS_index[prot].append(prot_expressions_RGB[ind])
+            ind+=1
+
 # ****************************************************************************************** #
 # ******************************* FILE MANIPULATION FOR PoGo ******************************* #
 
@@ -464,11 +563,12 @@ class Organism:
 
 
 
-    def protein_track(self, prot_list=[], bed_fn='protein_track.bed'):
+    def protein_track(self, prot_list=[], strand='NC_006273.2', bed_fn='test1.bed'):
         """
         Version: 1.0
 
         Name History: protein_set_bed - protein_track
+
         Receive a list of protein codes and create the .bed track with the genomic locations of the protins.
         Example of multi exon protein in input:
           UL37 - [['52573', '53060', '-'], ['51302', '51344', '-'], ['50262', '51197', '-']]
@@ -477,64 +577,62 @@ class Organism:
         """
         
         if prot_list==[]:
-            prot_list=self.prot_index.keys()
-            #prot_list=set(prot_list)
+            prot_list=self.prot_CDS_index.keys()
 
         print(f'Start processing {len(prot_list)} proteins')
         prot_track_fh = open(bed_fn,'w')
 
-        chr_name = 'NC_006273.2'
+        if strand=='NC_006273.2': chr_name = 'NC_006273.2' # Find the chromosome name
+        else:
+            print('Option under construction. Check how to manage chromosome name in Human annotations\FASTA')
 
         BED_rows = []
         prot_row = ''
 
         for protein in prot_list:
-            
             prot_row=''
+            CDS_block=self.prot_CDS_index[protein] # Extract the block of CDS coordinates
 
-            chromStart = self.prot_index[protein][-1][0]    # Set the START in chromosome at the lowest coordinate in the current gene structure
-            chromEnd = self.prot_index[protein][0][1]      # Set the END in chromosome at the higest coordinate in the current gene structure
-            
-            tickStart = self.prot_index[protein][-1][0]
-            tickEnd = self.prot_index[protein][0][1]
+            Strand=CDS_block[0][2]                 # The strand is in the third position of the first CDS features record
 
-            score = '1000'
+            if Strand =='+':                       # If strand positive
+                chromStart=CDS_block[0][0]              # Chromosome Start is in the first position of the first record
+                chromEnd=CDS_block[-1][1]               # Chromosome End is in the second position of the last record
+            else:
+                chromStart=CDS_block[0][1]              # In the negative case the bonduaries coordinates 
+                chromEnd=CDS_block[-1][0]               # inverted their orders in the respective records
+
+            print(self.prot_CDS_index[protein])
+            print(f'{chromStart} - {chromEnd}')
             
+
+            Score='1'
+            tickStart = chromStart
+            tickEnd = chromEnd
+            blockCount = str(len(CDS_block))
+
             itemRGB = "255.0.0"
-            blockCount = str(len(self.prot_index[protein]))
-            
-            blk_size_int=[]
+
             blockSizes_str = ''
             blockStarts_str = ''
-            for exon in reversed(self.prot_index[protein]): # Iterate over the list of lists of exons from the neares exon toward the farest
-                strand = exon[2]
-                
-                # if not chromStart: 
-                #     chromStart = int(exon[0])   # If chromeStart is == None means that this is the first exon considered
-                # elif chromStart > int(exon[0]): # Otherwise I have to chose the lower coordinate in the exon structure
-                #     chromStart = int(exon[0])
+            for CDS in CDS_block:
+                if Strand =='+':
+                    CDS_start=int(CDS[0])
+                    CDS_end=int(CDS[1])
+                else:
+                    CDS_start=int(CDS[1])
+                    CDS_end=int(CDS[0])
 
-                # if not chromEnd: 
-                #     chromEnd = int(exon[1])     # If chromeEnd is == None means that this is the first exon considered
-                # elif chromEnd > int(exon[1]):   # Otherwise I have to chose the higer coordinate in the exon structure
-                #     chromEnd = int(exon[1])
+                blockSizes_str+=str(abs(CDS_end-CDS_start)) + ','
+                blockStarts_str+=str(abs(int(chromStart)-CDS_start)) + ','
 
-                blk_s = int(exon[0])
-                blk_e = int(exon[1])
-                blk_size = str(abs(blk_s-blk_e))
-                blockSizes_str += blk_size + ','
-
-                blockStarts_str += str(abs(int(chromStart)-blk_s)) + ','
- 
-            blockSizes_str = blockSizes_str[:-1] # Remove the exceded ','
-            blockStarts_str = blockStarts_str[:-1]
-
-            chromStart = str(chromStart)
-            chromEnd = str(chromEnd)
-
-            prot_row += (chr_name+'\t'+chromStart+'\t'+chromEnd+'\t'+protein+'\t'+score+'\t'+
-                         strand+'\t'+tickStart+'\t'+tickEnd+'\t'+itemRGB+'\t'+blockCount+'\t'+
+            prot_row += (chr_name+'\t'+chromStart+'\t'+chromEnd+'\t'+protein+'\t'+Score+'\t'+
+                         Strand+'\t'+tickStart+'\t'+tickEnd+'\t'+itemRGB+'\t'+blockCount+'\t'+
                          blockSizes_str+'\t'+blockStarts_str+'\n')
+
+            print(prot_row)
+            print('-'*100)
+
 
             BED_rows.append(prot_row)
 
