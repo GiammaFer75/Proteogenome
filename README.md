@@ -35,14 +35,25 @@ NC_006273.2	RefSeq	exon	1356	2386	.	+	.	ID=exon-HHV5wtgp001-1;Parent=rna-HHV5wtg
 Proteogenome can read proteomic data provided in CSV or TSV file. The table must contain the following data:
 
 - **Protein Accession** 
+
     UniProt protein accession codes
 - **Peptide Sequence**
+
     Amino Acids
 - **Peptide Modification**
+
     The type and the position of the PTM inside the peptide.
     For instance, considering the line '3535' in the example table below. The Carbamidomethyl C(9) notation means that the PTM occours on the Cysteine at position 9 in this specific peptide. 
+
 - **Peptide PSMs**
+
+    Number of peptide-spectrum matches (PSMs) for the given peptide, if available from the MS/MS analysis.
+
 - **Peptide Intensity**
+
+    Peptide intensity, from the MS/MS analysis. 
+
+
 
 Example Table:
 ![](Images/ProteomicsDataTable.png)
