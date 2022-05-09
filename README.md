@@ -56,7 +56,7 @@ Proteogenome can read proteomic data provided in CSV or TSV file. The table must
 
 
 Example Table:
-![](Images/ProteomicsDataTable.png)
+![](Images/ProteomicsDataTable.jpg)
 
 ### FASTA refernce genome
 An additional FASTA file with the reference genome is required for map visualisation in the genome browser. But in this case, it is necessary to provide the nucleotides sequence of the specific genome. For instance:
