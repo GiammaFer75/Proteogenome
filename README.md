@@ -1,6 +1,39 @@
 # Proteogenome
-## A visualising proteomic data software
+## A software for the visualization of proteomic data
 
+### ***What the software does***
 Proteogenome is a Python module created for viewing proteomic data. These data must be represented by the MS\MS peptides together with their intensity and the ID numbers of the proteins from which they were generated.
 
-The final visualisation of these proteomic data it will be similar to a map. On the top will be the reference genome of a specific organism and below it, will be the peptide and the protein map.  
+The final visualisation of these proteomic data will be similar to a map. On the top will be the reference genome of a specific organism and below it will be visualised the peptide and the protein map. In particular, the protein map will report the protein expression level detected in the specific proteome. This representation will be similar to a heatmap of protein intensities.
+
+### ***What do you need*** 
+
+### To run run the software
+In order to run Proteogenome you need at least 3 files
+- FASTA file with the protein sequences of the specific organism.
+- GFF3 file with protein annotations of the specific organism.
+- Proteomics data.
+
+- FASTA file with the reference genome of the specific organism (nucleotides).
+
+### FASTA 
+The recommended format for this file should be like this :
+```sh
+>NC_006273.2_prot_YP_081455.1_1|gene=RL1|gene:gene-HHV5wtgp001|transcript:rna-HHV5wtgp001|db_xref=GeneID:3077430|protein=proteinRL1|protein_id=YP_081455.1|location=1367..2299|gbkey=CDS
+MPATDTNSTHTTPLHPEDQHTLPLHHSTTQPHVQTSDKHADKQHRTQMELDAADYAACAQARQHLYGQTQPQLHAYPNANPQESAHFRTENQHQLTNLLHNIGEGAALGYPVPRAEIRRGGGDWADSASDFDADCWCMWGRFGTMGRQPVVTLLLARQRDGLADWNVVRCRGTGFRAHDSEDGVSVWRQHLVFLLGGHGRRVQLERPSAGEAQARGLLPRIRITPISTSPRPKPPQPTTSTASHPHATARPDHTLFPVPSTPSATVHNPRNYAVQLHAETTRTWRWARRGERGAWMPAETFTCPKDKRPW
+```
+This FASTA file must report the amino acids sequences. It will be used  to align the peptide sequences.
+
+### GFF3
+The recommended format for this file should be like this :
+```sh
+NC_006273.2	RefSeq	exon	1356	2386	.	+	.	ID=exon-HHV5wtgp001-1;Parent=rna-HHV5wtgp001;Dbxref=GeneID:3077430;experiment=Northern blot,RACE;gbkey=mRNA;gene=RL1;locus_tag=HHV5wtgp001;product=protein RL1
+```
+
+### To visualise the maps
+An additional FASTA file with the reference genome is required for map visualisation in the genome browser. But in this case, it is necessary to provide the nucleotides sequence of the specific genome. For instance:
+
+```sh
+>NC_006273.2 Human herpesvirus 5 strain Merlin, complete genome
+CCATTCCGGGCCGTGTGCTGGGTCCCCGAGGGGCGGGGGGGTGTTTTCTGCGGGGGGGTGAAATTTGGAGTTGCGTGTGTGGACGGCGACGGCGACTAGTTGCGTGTGCTGCGGTGGGTACGGCGACGGCGAATAAAAGCGACGTGCGGCGCGCACGGCGAAAAGCAGACGCGCGTCTGTGTCTGTTTGAGTCCCCAGGGGACGGCAGCGCGGGTCCTTGGGGACACACGCAAAACAACGGCCAGACAAGACGCGGGCGCAAGGGAGGAGTCGCGGGCCCCGGGGCACACTGCACAACCCGCGTCGAGGACACACGCAGACACGGCCCGCCAACACACCCCGACACACCCCTGACACACCCCGCCGACACACCCGGCACACGCCCGCGACACACCCGGCCAACACACCCCGACACACCCGGCACACGCCCGCGACACACCCGGCCAACACACCCCGACACACCCGGCACACGCCCGCGACACACCCGCGGCACACCCTGACACACCCGCCACACCCGGCACACACCCACCCCGCCGCGCCCCCGACACACCCCGACCGCCGCCGGTGCGGGACAGGGCTAAGCGCCTTTATGGCGCCGCAAGCGCTCCGCCGCTTCTGCGGCTTGCTGTC
+```
