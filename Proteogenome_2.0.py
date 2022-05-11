@@ -25,6 +25,7 @@ class Organism:
         # Author: Giammarco Ferrari
         # Thank you for using Proteogenome!!!
         # """
+        # 
         if FASTA_filename!='': 
             self.FASTA_filename=FASTA_filename
             self.FASTA_lst=self.file_to_lst(self.FASTA_filename)
@@ -36,7 +37,7 @@ class Organism:
             self.input_table=self.load_input_table(self.input_table_filename)
 
         self.prot_CDS_index = {}      # Initialise dictionary for protein ---> CDS index
-        self.prot_peptide_index = {}  # Initialise dictionary for protein ---> peptide index
+        self.prot_pep_index = {}      # Initialise dictionary for protein ---> peptide index
         self.prot_PSMint_index = {}   # Initialise dictionary for protein ---> PSM - intensity - RGB intensity index     
     	
 
@@ -195,6 +196,8 @@ class Organism:
         rows regarding the protein CDS 
         INPUT :
         OUTPUT:
+                self.annotation_matrix
+                self.CDS_matrix
         """
 
         first=True
@@ -282,8 +285,15 @@ class Organism:
             else:
                 self.prot_CDS_index[protein_ID]=[CDS_feat]
 
+    
     def groupby_protein(self, pep_input_table, protein_ID):
         """
+        Version: 1.0
+
+        Name History: groupby_protein
+
+        INPUT :
+        OUTPUT:
         """
         protein_peptide_block=pep_input_table[pep_input_table[:,0]==protein_ID]
         return protein_peptide_block
@@ -296,41 +306,65 @@ class Organism:
 
         This function parse the input table and group all the peptides by protein ID
 
-        INPUT : pep_input_table     np.array    
+        INPUT : pep_input_table         np.array    
         
-        OUTPUT: .prot_pep_index     [Dict]  The protein index with the CDS coordinates.
+        OUTPUT: self.prot_pep_index     [Dict]  The protein index with the CDS coordinates.
                                             (Key)   [Str]               Protein ID
                                             (Value) [List][List][Str]   peptides = 
                                                                         pepsequence, intensisty
         """
         
         prot_ID_array = np.unique(pep_input_table[:, 0]) # Extract the protein IDs
-
-        self.prot_pep_index = {}              # Initialise the index 
+        print(prot_ID_array)
+         
         for protein in prot_ID_array:
             peptides_block =  self.groupby_protein(pep_input_table, protein) # Group the peptides that belong to the current protein.
-            
-            
-            # print(peptides_block)
-            # print('--------------'*5)
-
             self.prot_pep_index[protein] = peptides_block
+
 
     def protein_PSM_int_index(self):
         """
+        Version: 1.0
+
+        Name History: protein_PSM_int_index
+
+        This function creates the protein index for the PSM and intensities. 
+        Moreover generates the RGB code for each protein intensity. 
+        The RGB codes will be used for the creation of the protein map.  
+        
         INPUT :
+                self.prot_pep_index
+                self.prot_CDS_index
         OUTPUT:
         """
         import math 
 
         def generate_color_gradient(color_lst, reverse_gradient=False):
             """
+            Version: 1.0
+
+            Name History: generate_color_gradient
+            
+            ** MAIN FUNCTION ** ---> protein_PSM_int_index
+
             INPUT  :  color_lst     List    List of strings with the colour names that will be compose the colour gradient
                                             Example: ['black','gray','blue','green','yellow','red']
             OUTPUT :
             """
 
             def colorFader(c1,c2,mix=0): #fade (linear interpolate) from color c1 (at mix=0) to c2 (mix=1)
+                """
+                Version: 1.0
+
+                Name History: colorFader
+
+                ** MAIN FUNCTION ** ---> generate_color_gradient
+
+                This function generates an array that contains an RGB gradient from color1 to the color2.
+                The gradient is expressed in RGB codes.
+                INPUT :
+                OUTPUT:
+                """
                 c1=np.array(colors.to_rgb(c1))
                 c2=np.array(colors.to_rgb(c2))
                 return colors.to_rgb((1-mix)*c1 + mix*c2)
@@ -355,6 +389,7 @@ class Organism:
 
         def exprlev_resc_RGB(values,RGB_scale):
             """
+            This function find the RGB code that 
             """
             old_max = min(values)
             old_min = max(values)
@@ -396,8 +431,8 @@ class Organism:
             PSM_sum=0
             inten_sum=0
             for pep_row in pep_array:
-                PSM_sum+=int(pep_row[2])
-                inten_sum+=int(pep_row[3])
+                PSM_sum+=int(pep_row[3])
+                inten_sum+=int(pep_row[4])
             self.prot_PSMint_index[protein]=[PSM_sum, inten_sum]
             intensities.append(inten_sum)
 
@@ -416,19 +451,30 @@ class Organism:
         #print(self.prot_CDS_index)
 
         ind=0
-        for prot, PSMint in self.prot_CDS_index.items(): # Update the dictionary of self.prot_CDS_index with the RGB intensities
+        for prot, PSMint in self.prot_pep_index.items(): # Update the dictionary of self.prot_CDS_index with the RGB intensities
             self.prot_PSMint_index[prot].append(prot_expressions_RGB[ind])
             ind+=1
+
+
 
     def initialise_indexes(self, annot_format='gff3'):
         """
         """
+        print("""
+               **********************
+               INDEXES INITIALISATION
+               **********************
+               """)
+        self.CDS_annot_matrix(self.annot_lst)
         self.protein_CDS_index(self.CDS_matrix)
-        self.protein_peptide_index()
+        self.protein_peptide_index(self.input_table)
+        self.protein_PSM_int_index()
+
+
 # ****************************************************************************************** #
 # ******************************* FILE MANIPULATION FOR PoGo ******************************* #
 
-    
+
     def rectify_rows(self, list_rows, target_sub_str=[], target_patterns=[]):
         """
         Version: 1.0
@@ -440,9 +486,14 @@ class Organism:
         Target substrings can be substitute in two ways:
                 - precise patterns: are substrings known before the substituting operation 
                                     and are applied through the command ".replace()".
+                                    These patterns must be passed through the list
+                                    "target_sub_string"
                 - generic patterns: substrings that can change in the file rows but with the  
                                     same repeated structure. This type of substring must be 
                                     set as regerx Python patterns enclosed in ''.
+                                    These patterns must be passed through the list
+                                    "target_patterns"
+
                                       
         INPUT : list_rows           List    List of rows to clean
                 target_sub_str      List    List of tuples of two elements. Replacement through 
@@ -588,12 +639,14 @@ class Organism:
         Receive a list of protein codes and create the .bed track with the genomic locations of the protins.
         Example of multi exon protein in input:
           UL37 - [['52573', '53060', '-'], ['51302', '51344', '-'], ['50262', '51197', '-']]
-        INPUT:
+        INPUT:  self.prot_pep_index
+                self.prot_CDS_index
+                self.prot_PSMint_index
         OUTPUT:
         """
         
         if prot_list==[]:
-            prot_list=self.prot_CDS_index.keys()
+            prot_list=self.prot_pep_index.keys()
 
         print(f'Start processing {len(prot_list)} proteins')
         prot_track_fh = open(bed_fn,'w')
@@ -660,6 +713,55 @@ class Organism:
             #print(f'{protein} - {self.prot_index[protein]}')
 
 
+    def PoGo_input_table(self, experiment_tag='exp', out_file_name=''):
+        """
+        Version: 1.0
+
+        Name History: PoGo_input_table
+
+        This function creates a peptide input table suitable for the PoGo software.
+        Considering the format of the input table for Proteogenome, 
+        this function removes the first column of the original input table. 
+        Then, insert a new column into the first position with an experiment tag
+        that will be reported on each peptide row.  
+
+        INPUT : self.imput_table
+        OUTPUT:
+        """
+        self.PoGo_it=self.input_table[:,1::]
+        insert_experiment_name=np.full((len(self.PoGo_it),1), experiment_tag)
+        self.PoGo_it=np.concatenate((insert_experiment_name,self.PoGo_it), axis=1)
+
+        if out_file_name: self.make_tab_file(out_file_name, self.PoGo_it)
+
+    def load_BED(self):
+        """
+        Version: 1.0
+
+        Name Hystory: load_BED
+
+        This function load a BED file in a Numpy array.
+
+        INPUT :
+        OUTPUT:
+        """
+
+    def filter_peptides(self):
+        """
+        Version: 1.0
+
+        Name History: filter_peptides
+
+        This function  filter the peptides mapped by PoGo. 
+        The filter criteria is based on the proteins identified in the proteomics data 
+        provided to the software.
+        The peptides coordinates are comlpared with the CDS coordinates. 
+        If the peptide coordinates between the CDS coordinates, then the peptides will 
+        be included into the peptide map.  
+
+        INPUT :
+        OUTPUT:
+        """
 
 # *************************************************************************************** #
 # ********************************** Proteogenome DEMO ********************************** #
@@ -792,7 +894,7 @@ class Organism:
         #FASTA_in_lst = self.file_to_lst(prot_sequences_FASTA_fn) # Upload the FASTA file with protein sequences in a list 
         FASTA_in_lst = self.FASTA_cpt_seq(self.FASTA_lst)         # Compact possible multilines sequences       
 
-        dummy_input_matrix = np.array([['','','','']])
+        dummy_input_matrix = np.array([['','','','','']])
         table_row=[]
         current_protein=True # This boolean signals if the data belong to the current protein. 
                              # This is used for combine the protein ID from the FASTA header with his sequence.
@@ -821,7 +923,7 @@ class Organism:
                         rand_PSM=randrange(PSMs[0],PSMs[1]) # Generate random PSMs
                     else:
                         rand_PSM=1
-                    rand_PSM=np.array(rand_PSM)
+                    rand_PSM=np.array(['',rand_PSM])
                     #current_prot_pep=np.append(current_prot_pep,[rand_PSM],axis=0)
                     current_prot_pep=np.append(current_prot_pep,[rand_PSM],axis=0)
 
@@ -857,7 +959,7 @@ class Organism:
 
         This function cleans the self.prot_CDS_index class attribute of 
         protein codes that are not present in the self.prot_pep_index attribute class.
-        The reason for the discrepancy comes from the dummy_input function. 
+        One of the reason for the discrepancy could comes from the dummy_input function. 
         Here two thresholds have been set to define the length of the 
         dummy peptides (max - min).
         This could generate the case that some proteins are not represented in the 
@@ -899,7 +1001,7 @@ class Organism:
         FASTA_in_lst = self.FASTA_cpt_seq(self.FASTA_lst)         # Compact possible multilines sequences       
 
         #self.dummy_input_matrix = np.array([['','','','']])
-        self.dummy_input_matrix = np.empty((0,4))
+        self.dummy_input_matrix = np.empty((0,4)) 
         table_row=[]
         current_protein=True # This boolean signals if the data belong to the current protein. 
                              # This is used for combine the protein ID from the FASTA header with his sequence.
@@ -978,7 +1080,36 @@ class Organism:
         OUTPUT:
         """
 
+    def make_tab_file(self, out_file_name, input_array):
+        """
+        Version : 1.0
 
+        This function create a tab separated file from an np.array of data.
+        Input list must be organized as list of lists. 
+        Example: [[...],
+                  [...],
+                    .
+                  [...]]
+        The function retrieve the number of columns looking at the number of elements stored in the first element (a list by itself) stored in the input list.
+        The usage of this function is the creation of BED file
+
+        INPUT  :  out_file_name     String      The file path where the new file will be created
+                  input_array       np.array    Array of data to write in the output file
+        
+        OUTPUT : 
+        """
+        
+        out_file_hand = open(out_file_name, 'w')
+        number_of_columns = input_array.shape[1]
+
+        for row in input_array:
+            out_row =''
+            for col_ind, col_data in enumerate(row):
+                out_row += col_data
+                if (col_ind < number_of_columns): out_row += '\t'
+            out_row += '\n'
+            out_file_hand.write(out_row)
+        out_file_hand.close()
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
 #                                              M - A - I - N                                           #
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
