@@ -732,7 +732,7 @@ class Organism:
         insert_experiment_name=np.full((len(self.PoGo_it),1), experiment_tag)
         self.PoGo_it=np.concatenate((insert_experiment_name,self.PoGo_it), axis=1)
 
-        if out_file_name: self.make_tab_file(out_file_name, self.PoGo_it)
+        if out_file_name: self.make_sep_file(out_file_name, self.PoGo_it, sep='\t')
 
     def load_BED(self):
         """
@@ -1080,33 +1080,41 @@ class Organism:
         OUTPUT:
         """
 
-    def make_tab_file(self, out_file_name, input_array):
+    def make_sep_file(self, out_file_name, input_array, sep=' '):
         """
-        Version : 1.0
+        Version: 2.0
 
-        This function create a tab separated file from an np.array of data.
-        Input list must be organized as list of lists. 
+        Name History: make_tab_file - make_sep_file
+
+        This function creates a file from an np.array/List with separated fields.
+     
         Example: [[...],
                   [...],
                     .
                   [...]]
-        The function retrieve the number of columns looking at the number of elements stored in the first element (a list by itself) stored in the input list.
-        The usage of this function is the creation of BED file
 
-        INPUT  :  out_file_name     String      The file path where the new file will be created
-                  input_array       np.array    Array of data to write in the output file
+        The function retrieves the number of columns by looking at the number of columns stored 
+        in the first row of the input list/array.
+        The column's content will be written into the file separated by the value of the sep variable.
+
+        INPUT : out_file_name   [Str]       The file path where the new file will be created
+                input_array     [np.array]
+                                    or      Array or Listof data to write in the output file
+                                  [List]
+                                        
         
-        OUTPUT : 
+        OUTPUT: The file with the input array content
         """
         
         out_file_hand = open(out_file_name, 'w')
-        number_of_columns = input_array.shape[1]
+        if type(input_array)==list: number_of_columns=len(input_array[0])
+        elif 'numpy.ndarray' in str(type(input_array)): number_of_columns = input_array.shape[1]
 
         for row in input_array:
             out_row =''
             for col_ind, col_data in enumerate(row):
                 out_row += col_data
-                if (col_ind < number_of_columns): out_row += '\t'
+                if (col_ind < number_of_columns): out_row += sep#'\t'
             out_row += '\n'
             out_file_hand.write(out_row)
         out_file_hand.close()
