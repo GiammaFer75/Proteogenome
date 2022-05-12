@@ -38,6 +38,7 @@ class Organism:
 
         self.prot_CDS_index = {}      # Initialise dictionary for protein ---> CDS index
         self.prot_pep_index = {}      # Initialise dictionary for protein ---> peptide index
+        self.pep_prot_index = {}      # Initialise dictionary for peptide ---> protein index
         self.prot_PSMint_index = {}   # Initialise dictionary for protein ---> PSM - intensity - RGB intensity index     
     	
 
@@ -99,6 +100,34 @@ class Organism:
         """
         
         input_tab=np.array([['','','','','']])
+
+        fh=open(filename, 'r')
+        for row in fh:
+            row=row.split(sep)
+            row=np.array(row)
+            row[-1]=row[-1].replace('\n','')
+            input_tab=np.concatenate([input_tab,[row]], axis=0)
+        fh.close()
+        input_tab=input_tab[1:,:]   # Remove initialisation row
+        return input_tab
+
+
+    def load_generic_table(self, filename, sep='\t'):
+        """
+        Version: 1.0
+
+        Name History: load_generic_table
+
+        INPUT :
+        OUTPUT:
+        """
+        fh=open(filename, 'r')
+        first_line=fh.readline().rstrip()             # Divide in columns the first row 
+        number_of_columns=len(first_line.split(sep))  # Fetch the number of columns from the first row 
+        
+        fh.close()
+
+        input_tab=np.empty((1,number_of_columns))
 
         fh=open(filename, 'r')
         for row in fh:
@@ -321,6 +350,45 @@ class Organism:
             peptides_block =  self.groupby_protein(pep_input_table, protein) # Group the peptides that belong to the current protein.
             self.prot_pep_index[protein] = peptides_block
 
+    
+    def groupby_peptide(self, pep_input_table, peptide_sequence):
+        """
+        Version: 1.0
+
+        Name History: groupby_peptide
+
+        INPUT : pep_input_table
+                peptide_sequence
+        OUTPUT: protein_peptide_block
+        """
+        peptide_protein_block=pep_input_table[pep_input_table[:,1]==peptide_sequence]
+        peptide_protein_block=peptide_protein_block[:,0]
+        return peptide_protein_block
+
+    
+    def peptide_protein_index(self, pep_input_table):
+        """
+        Version: 1.0
+
+        History Name: peptide_protein_index
+
+        This function parse the input table and group all the protein ID by peptide sequence.
+
+        INPUT : pep_input_table         np.array    
+        
+        OUTPUT: self.pep_prot_index     [Dict]  The peptide sequence.
+                                                (Key)   [Str]       peptide sequence
+                                                (Value) [List][Str] Protein IDs where the peptide come from. 
+ 
+        """
+        peptide_seq_array = np.unique(pep_input_table[:, 1]) # Extract the protein IDs
+        print(peptide_seq_array)
+         
+        for peptide in peptide_seq_array:
+            protein_block =  self.groupby_peptide(pep_input_table, peptide) # Group the peptides that belong to the current protein.
+            self.pep_prot_index[peptide] = protein_block
+
+
 
     def protein_PSM_int_index(self):
         """
@@ -468,6 +536,7 @@ class Organism:
         self.CDS_annot_matrix(self.annot_lst)
         self.protein_CDS_index(self.CDS_matrix)
         self.protein_peptide_index(self.input_table)
+        self.peptide_protein_index(self.input_table)
         self.protein_PSM_int_index()
 
 
