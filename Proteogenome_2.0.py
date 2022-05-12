@@ -475,59 +475,101 @@ class Organism:
 # ******************************* FILE MANIPULATION FOR PoGo ******************************* #
 
 
-    def rectify_rows(self, list_rows, target_sub_str=[], target_patterns=[]):
+    def rectify_rows(self, list_rows, target_sub_str=[], target_patterns=[], 
+                     open_patterns=[], rows_not_modif=False):
         """
         Version: 1.0
 
         Name History: rectify_rows
 
-        This function recive a list of rows. Therefore cleans every single row replacing the 
+        This function receives a list of rows. Therefore cleans every single row replacing the 
         target substrings with the proper substitution.
         Target substrings can be substitute in two ways:
-                - precise patterns: are substrings known before the substituting operation 
+                
+                - target_sub_str:   are substrings known before the substituting operation 
                                     and are applied through the command ".replace()".
                                     These patterns must be passed through the list
                                     "target_sub_string"
-                - generic patterns: substrings that can change in the file rows but with the  
-                                    same repeated structure. This type of substring must be 
-                                    set as regerx Python patterns enclosed in ''.
-                                    These patterns must be passed through the list
-                                    "target_patterns"
+                
+                - target_patterns:  substring that must be replaced in the file rows occur in   
+                                    the same pattern. This pattern must be passed as a regerx 
+                                    Python patterns enclosed in ' '. This option search for the
+                                    pattern in the row. If it is found, the pattern is replaced 
+                                    by the substring passed in the tuple with the pattern itself.  
+                                    
+                - open patterns:    In this case also the substring that will replace the target
+                                    pattern is not specified explicitely as second argument in the 
+                                    tuple. Instead, it must be extracted by a generic pattern as well. 
 
                                       
-        INPUT : list_rows           List    List of rows to clean
-                target_sub_str      List    List of tuples of two elements. Replacement through 
+        INPUT : list_rows           [List]  List of rows to clean
+                target_sub_str      [List]  List of [tuples] of two elements. Replacement through 
                                             .replace() command. 
                                             Tuple position reference:
                                             [0] target substring that must be substitute.
-                                            [1] replacement string used in the substitution
-                target_patterns     List    List of tuples of two elements. Replacement through 
+                                            [1] replacement string used in the substitution.
+                target_patterns     [List]  List of [tuples] of two elements. Replacement through 
                                             .sub() command in a regex search.
                                             Tuple position reference:
                                             [0] target pattern that must be substitute.
-                                            [1] replacement string used in the substitution
-        OUTPUT: list_rows           List    The original list of rows cleaned from the 
+                                            [1] replacement string used in the substitution.
+                open_patterns       [List]  List of [tuples] of two elements. Replacement through 
+                                            .sub() command in a regex search.
+                                            Tuple position reference:
+                                            [0] target pattern that must be substitute.
+                                            [1] replacement pattern used to find the substring
+                                                that will substitute the value of the pattern [0].
+
+        OUTPUT: list_rows           [List]  The original list of rows cleaned from the 
                                             substrings provided as input.
-        """
-        
+        """ 
+        rows_not_modif_lst=[]
+        rows_not_modif_flag=False
+
         for ind, row in enumerate(list_rows):
-            #print(row)
+            #print('*'*30,' NEW ROW ','*'*30)
+            #print('original row - ', row)
             if target_sub_str:
-                for clear_this in target_sub_str:
-                    row = row.replace(clear_this[0],clear_this[1])
+                for substitution in target_sub_str:
+                    row = row.replace(substitution[0],substitution[1])
+                    #print(row)
 
             
             if target_patterns:
-                for clear_this in target_patterns:
+                for substitution in target_patterns:
                             #        |target pattern|    |replacement sub|  
-                    row = re.sub(r'' + clear_this[0] + '', clear_this[1], row) 
+                    row = re.sub(r'' + substitution[0] + '', substitution[1], row)
+                    #print(row) 
+
+            if open_patterns!=[]:
+                for substitution_tuple in open_patterns:
+                    try:
+                        to_be_replaced_pat=re.compile(r''+ substitution_tuple[0] +'')
+                        replace_pat=re.compile(r''+ substitution_tuple[1] +'')
+        
+                        to_be_replaced_value=to_be_replaced_pat.match(row).group(1)
+                        replace_value=replace_pat.match(row).group(1)
+
+                        row=re.sub(to_be_replaced_value, replace_value, row)
+                        #print(row)
+                    except:
+                        rows_not_modif_lst.append(row)
+                        rows_not_modif_flag=True
+                        # print(row)
+                        # print('+'*100)
+                        # a=input()
             
             #print(row)
             #a=input()    
             list_rows[ind] = row
             #print('\nlist_rows\n',list_rows)
 
-        return list_rows
+        if rows_not_modif_flag==True:
+            print('§§§§§§§§§§§ Some rows are not affected by the substitution §§§§§§§§§§§')
+
+        if (rows_not_modif==False): return list_rows
+        else: return list_rows, rows_not_modif_lst
+    
     
     def FASTA_cpt_seq(self, list_rows):
         """
@@ -1080,9 +1122,9 @@ class Organism:
         OUTPUT:
         """
 
-    def make_sep_file(self, out_file_name, input_array, sep=' '):
+    def make_sep_file(self, out_file_name, input_array, sep=''):
         """
-        Version: 2.0
+        Version: 1.0
 
         Name History: make_tab_file - make_sep_file
 
@@ -1107,8 +1149,11 @@ class Organism:
         """
         
         out_file_hand = open(out_file_name, 'w')
-        if type(input_array)==list: number_of_columns=len(input_array[0])
-        elif 'numpy.ndarray' in str(type(input_array)): number_of_columns = input_array.shape[1]
+        if type(input_array)==list and type(input_array[0])==list: # In this case is a list of lists
+            number_of_columns=len(input_array[0])
+        else: number_of_columns=1                                 # In this case is a simple list
+        
+        if 'numpy.ndarray' in str(type(input_array)): number_of_columns = input_array.shape[1]
 
         for row in input_array:
             out_row =''
