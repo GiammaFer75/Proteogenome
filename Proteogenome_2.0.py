@@ -839,25 +839,17 @@ class Organism:
         INPUT : self.imput_table
         OUTPUT:
         """
-        self.PoGo_it=self.input_table[:,1::]
-        insert_experiment_name=np.full((len(self.PoGo_it),1), experiment_tag)
-        self.PoGo_it=np.concatenate((insert_experiment_name,self.PoGo_it), axis=1)
+        self.PoGo_it=np.delete(self.input_table,0,1)    # Remove the protein codes column. self.input_table[:,1::]
+        self.PoGo_it=np.delete(self.PoGo_it,1,1)        # Remove the PTM column
+        insert_experiment_name=np.full((len(self.PoGo_it),1), experiment_tag)  # Generate the experiment tag column.
+        self.PoGo_it=np.concatenate((insert_experiment_name,self.PoGo_it), axis=1) # Insert the experiment tag column as a first column of the table.
 
-        if out_file_name: self.make_sep_file(out_file_name, self.PoGo_it, sep='\t')
+        if out_file_name: 
+            print('making PoGo input table')
+            self.make_sep_file(out_file_name, self.PoGo_it, sep='\t') # Create the file with the the PoGo input table.
 
-    def load_BED(self):
-        """
-        Version: 1.0
 
-        Name Hystory: load_BED
-
-        This function load a BED file in a Numpy array.
-
-        INPUT :
-        OUTPUT:
-        """
-
-    def filter_peptides(self):
+    def filter_peptides(self, PoGo_peptides):
         """
         Version: 1.0
 
@@ -873,6 +865,60 @@ class Organism:
         INPUT :
         OUTPUT:
         """
+        row, col=PoGo_peptides.shape 
+
+        # Initialise a smaller peptide table #
+        coord_pep_strand=PoGo_peptides[:,1:6] # Slice the PoGo mapped peptide table considering only:
+                                              # | start | end | peptide sequence | score | strand |
+        coord_pep_strand=np.delete(coord_pep_strand,3,1)  # Delete the 'score' column
+
+        print('Subsetting of PoGo_peptides\n',coord_pep_strand)
+
+        protein_set=np.array([]) # Set of unique protein codes
+
+        peptide_seq_array=coord_pep_strand[:,2]  # Consider all the peptide sequence
+        for pep_seq in peptide_seq_array:
+            protein_block= self.pep_prot_index[pep_seq] # Fetch the protein codes where the current peptide has been found
+            protein_set=np.concatenate((protein_set,protein_block))
+        protein_set=np.unique(protein_set)   # Shrink the protein code collection to the unique codes
+
+        ################### GENERATE THE ALLOWED GENOMIC SPACE ###################
+        allowed_genomic_space={}
+        for unique_prot_code in protein_set:
+            int_CDS_coordinates=[]                              
+            for str_CDS_coord in self.prot_CDS_index[unique_prot_code]: # Considering the current protein code coordinates.
+                from_str_to_int=list(map(int,str_CDS_coord[0:2]))       # Convert from Str to Int all the CDS coordinates.
+                from_str_to_int.append(str_CDS_coord[-1])               # Append the strand tag in a Str format
+                int_CDS_coordinates.append(from_str_to_int)             # Increase the coordinate bolck
+            allowed_genomic_space[unique_prot_code]=int_CDS_coordinates # Append the new piece of allowed genomic coordinates.
+
+        print(allowed_genomic_space)
+        ##########################################################################
+
+        for pep_row_index, peptide_row in enumerate(coord_pep_strand):    # Iterate over the PoGo peptide map
+            peptide_coord_1=int(peptide_row[0])      # Fetch peptide genomic coordinates
+            peptide_coord_2=int(peptide_row[1])
+            peptide_sequence=peptide_row[2] 
+            peptide_strand=peptide_row[3] 
+            peptide_to_protein=self.pep_prot_index[peptide_sequence] # Fetch the set of proteins where the peptide has been found.
+
+            # ---------- COORDINATES COMPARISON ---------- #  
+            for protein in peptide_to_protein: # Iterate the set of protein 
+                
+                CDS_block=allowed_genomic_space[protein] # Fetch the genomic coordinates of the CDS of the protein where the peptide has been found.
+                for CDS in CDS_block:
+                    CDS_coord_1=CDS[0]
+                    CDS_coord_2=CDS[1]
+                    if peptide_strand=='+':
+                        if (peptide_coord_1>=CDS_coord_1) and (peptide_coord_2<=CDS_coord_2): # VALID genomic coordinates
+                            pass
+                        else:                                                                 # INVALID genomic coordinates
+                            PoGo_peptides=np.delete(PoGo_peptides,pep_row_index,0)     # REMOVE THE PEPTIDE FROM THE PoGo PEPTIDE TABLE
+            
+        print('PoGo_peptides')
+        print(PoGo_peptides)
+            # -------------------------------------------- #
+        
 
 # *************************************************************************************** #
 # ********************************** Proteogenome DEMO ********************************** #
