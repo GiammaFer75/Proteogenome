@@ -840,13 +840,113 @@ class Organism:
         OUTPUT:
         """
         self.PoGo_it=np.delete(self.input_table,0,1)    # Remove the protein codes column. self.input_table[:,1::]
+        
+        PTMs=self.PoGo_it[:,1]                          # Save the PTMs type and location for each peptide in an array.
+        print(self.PoGo_it)
+        #peptides_updated=self.apply_PTMs_to_pep(peptide_tab=self.PoGo_it) # Apply the PTM to the peptide sequence # 
+        self.PoGo_it=self.apply_PTMs_to_pep(peptide_tab=self.PoGo_it)
+        
         self.PoGo_it=np.delete(self.PoGo_it,1,1)        # Remove the PTM column
+        print(self.PoGo_it)
+
+
         insert_experiment_name=np.full((len(self.PoGo_it),1), experiment_tag)  # Generate the experiment tag column.
         self.PoGo_it=np.concatenate((insert_experiment_name,self.PoGo_it), axis=1) # Insert the experiment tag column as a first column of the table.
 
         if out_file_name: 
             print('making PoGo input table')
             self.make_sep_file(out_file_name, self.PoGo_it, sep='\t') # Create the file with the the PoGo input table.
+
+
+    def apply_PTMs_to_pep(self, peptide_tab, PTMs_to_remove=[]):
+        """
+        Version: 2.0 
+
+        Name History: apply_PTMs_to_pep
+
+        This function updates the peptide sequences with the PTMs encoding (see PoGo software instructions).
+
+        INPUT  :  peptide_tab              np.array   The table with proteomics data.
+                  
+                  PTMs_to_remove           List       Strings with the type of PTMs that must not be applied to the peptides.   
+        OUTPUT :  peptides_PTMs_updated    List       he peptides sequence updated with the PTMs encoding (format in PoGo instruction)
+
+        References: PoGo - https://github.com/cschlaffner/PoGo 
+        """
+
+        def PTMs_type_set(modifications, PTMs_remove):
+            """
+            Version: 2.0
+
+            Name History: PTMs_type_set
+            """
+
+                                                            # Apply the unique function but the result might be something like that [Oxidation M(6), Oxidation M(10), Oxidation M(1),  ...] because the PTM |amino acid(position)| part might affect the uniqueness of the PTM type (Oxidation in this example) 
+            PTM_types = []
+            
+             
+            if 'None' in modifications:  # If 'None' value is included into the PTM values.
+                modifications=list(dict.fromkeys(modifications)) # Clean from 'None' duplications.
+                None_position=modifications.index('None')         # Find the position of the last 'None' value.
+                del modifications[None_position]                  # Remove the last 'None' value.
+            
+            for PTM in modifications: # Iterate over the PTMs list. Because the PTMs could appear like that Example: [Oxidation M(6), Oxidation M(10), Oxidation M(1),  ...]
+                                      # we are interested only in the PTM type (in the example: 'Oxidation').
+                PTM_types.append(PTM.split()[0])  # Splitting the original PTM and taking [0] we extract always the type (  Example of split result ['Oxidation', 'M(10)']  )
+            PTM_types = list(set(PTM_types))         # Apply the unique (set) function for the list in order to have only one element for each PTM type.
+            
+
+            for mod_type in PTMs_remove:   # Loop over the list of PTMs to exclude
+                if (mod_type in PTM_types): PTM_types.remove(mod_type) # Remove the PTM not desired
+            
+            return PTM_types
+
+        # print(' --------------- PTMs_to_remove ---------------\n',PTMs_to_remove)
+        # print(' ***************** peptide_tab *****************\n',peptide_tab)
+        
+        PTMs_code = {'phosphorylation' : '(phospho)'  , 'acetylation' : '(acetyl)', 'acetylation'      : '(acetyl)'    , 'amidation' : '(amidated)',                                  
+                     'oxidation'       : '(oxidation)', 'methylation' : '(methyl)', 'ubiquitinylation' : '(glygly; gg)', 'sulfation' : '(sulfo)'   ,                 
+                     'palmitoylation'  : '(palmitoyl)', 'formylation' : '(formyl)', 'deamidation'      : '(deamidated)'                 
+                     }#Any other post-translational modification
+        
+        peptides_PTMs_updated = np.array([[]])
+        PTM_position_pat=re.compile(r'.*?\([A-Z](.*?)\)')
+        
+        # Extract the column with the PTM encoding.
+        PTM_column = peptide_tab[:,1]
+      
+        # Create a list of valid PTMs to insert in the peptide sequences.
+        PTMs_types = PTMs_type_set(PTM_column, PTMs_to_remove)
+       
+       
+        for peptide_ind, peptide_row in enumerate(peptide_tab):  # Loop over the peptide table.     
+            peptide_PTM = peptide_row[0]    # From the row take only the peptide SEQUENCE.
+           
+            for apply_PTM in PTMs_types:  # Loop over the PTMs list.
+              
+               
+                peptide_modification = peptide_row[1]  # From the row take only the peptide MODIFICATION
+                if peptide_modification!='None':
+                    peptide_modification = peptide_modification.split()    # Split the peptide modification string in the two main components: Modification Type - Modification Position           
+                    modificatio_type = peptide_modification[0]             # Modification Type
+                                
+                    #try:
+                    modification_position = peptide_modification[1] # Modification Position. Only for those modification other than 'None'    
+                    if (modificatio_type.lower() == apply_PTM.lower()):                                   # Find the specific PTM allowed to be applyed
+                        modification_position=int(PTM_position_pat.match(modification_position).group(1))
+                        
+                        #modification_position = int(modification_position.split('(')[1].replace(')',''))  # Clean the Modification position. Example: in general modification position might appear like that M(10) and we want only '10'
+                        PTM_encoded = PTMs_code[modificatio_type.lower()]                                 # Translate the PTM name in the PoGo PTM name
+                        peptide_PTM = peptide_PTM[:modification_position] + PTM_encoded + peptide_PTM[modification_position:] #Insert the PTM encoded in the peptide sequence
+                        
+                    #except:
+                    #    print(f'{modificatio_type.lower()} - {apply_PTM.lower()}')            
+                    #    pass  # If you are on a peptide that reports 'None' in the modification field you have to skip the entire updating part
+            
+            
+            peptide_tab[peptide_ind,0]=peptide_PTM        
+        
+        return peptide_tab
 
 
     def filter_peptides(self, PoGo_peptides):
@@ -1045,11 +1145,15 @@ class Organism:
                 dummy_exp_name      Str             Dummy experiment name.
         OUTPUT: dummy_input_matrix  np.array[Str]   The matrix with the dummy peptides.
         """
+        
+        import copy
 
-        prot_ID_pat = re.compile(r'.*?gene=.*?(.*?)\slocus_tag=') # Pattern for protein ID
+        prot_ID_pat = re.compile(r'.*?gene=.*?(.*?)\slocus_tag=|.*?gene:(.*?)\s') # Pattern for protein ID
 
         #FASTA_in_lst = self.file_to_lst(prot_sequences_FASTA_fn) # Upload the FASTA file with protein sequences in a list 
-        FASTA_in_lst = self.FASTA_cpt_seq(self.FASTA_lst)         # Compact possible multilines sequences       
+        #FASTA_in_lst = self.FASTA_cpt_seq(self.FASTA_lst)         # Compact possible multilines sequences       
+
+        FASTA_in_lst= copy.deepcopy(self.FASTA_lst)
 
         dummy_input_matrix = np.array([['','','','','']])
         table_row=[]
@@ -1060,6 +1164,8 @@ class Organism:
             #if ind>4: break # ################REMOVE THIS ROW IN THE FINAL VERSION################
             
             if prot_sequence[0] == '>':# If this row is a FASTA headers.
+                # print(prot_sequence)
+                # a=input()
                 protein_ID=prot_ID_pat.match(prot_sequence).group(1) # Extract the PROTEIN ID
                 current_protein=True       # Signals that the next rows belongs to this protein.
             
@@ -1082,7 +1188,7 @@ class Organism:
                         rand_PSM=1
                     rand_PSM=np.array(['',rand_PSM])
                     #current_prot_pep=np.append(current_prot_pep,[rand_PSM],axis=0)
-                    current_prot_pep=np.append(current_prot_pep,[rand_PSM],axis=0)
+                    current_prot_pep=np.append(current_prot_pep,rand_PSM,axis=0)
 
                 # ***** RANDOM INTENSITY ***** #
                     rand_intensity=np.array(randrange(pep_int_range[0],pep_int_range[1]))
