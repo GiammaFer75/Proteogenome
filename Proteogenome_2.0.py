@@ -149,7 +149,7 @@ class Organism:
                                 ^
                                 |
                             This additional space will affect the map view in the genome browser.
-                            
+
         If the flag PoGo is true the function will remove the space characters in the first table column.
 
         INPUT :
@@ -993,7 +993,7 @@ class Organism:
 
     def filter_peptides(self, PoGo_peptides, out_file_name=''):
         """
-        Version: 1.1
+        Version: 1.2
 
         Name History: filter_peptides
 
@@ -1002,11 +1002,16 @@ class Organism:
         provided to the software.
         The peptides coordinates are comlpared with the CDS coordinates. 
         If the peptide coordinates between the CDS coordinates, then the peptides will 
-        be included into the peptide map.  
+        be included into the peptide map.
+        If the PTMs have been applied to the peptide sequences the function detects the 
+        modifications, extracts the original peptides sequences and performs the peptide 
+        filtration. However, the peptide sequences already updated with the PTM encoding 
+        will not be modified in all instance's attributes.  
 
         INPUT :
         OUTPUT:
         """
+        
         row, col=PoGo_peptides.shape 
 
         # Initialise a smaller peptide table #
@@ -1021,6 +1026,11 @@ class Organism:
         peptide_seq_array=coord_pep_strand[:,2]  # Consider all the peptide sequence
         print('peptide_seq_array ----\n',peptide_seq_array)
         for pep_seq in peptide_seq_array:
+
+            # If a '(' is in the peptide sequence, then means that the PTMs have been already applied to the peptide sequences.
+            if '(' in pep_seq:
+                pep_seq=re.sub('\(.*\)','',pep_seq) # Remove the PTM encoding restoring the original peptide sequence
+
             protein_block= self.pep_prot_index[pep_seq] # Fetch the protein codes where the current peptide has been found
             protein_set=np.concatenate((protein_set,protein_block))
         protein_set=np.unique(protein_set)   # Shrink the protein code collection to the unique codes
@@ -1041,7 +1051,9 @@ class Organism:
         for pep_row_index, peptide_row in enumerate(coord_pep_strand):    # Iterate over the PoGo peptide map
             peptide_coord_1=int(peptide_row[0])      # Fetch peptide genomic coordinates
             peptide_coord_2=int(peptide_row[1])
-            peptide_sequence=peptide_row[2] 
+            peptide_sequence=peptide_row[2]
+            if '(' in peptide_sequence:
+                peptide_sequence=re.sub('\(.*\)','',peptide_sequence)
             peptide_strand=peptide_row[3] 
             peptide_to_protein=self.pep_prot_index[peptide_sequence] # Fetch the set of proteins where the peptide has been found.
 
@@ -1058,11 +1070,11 @@ class Organism:
                         else:                                                                 # INVALID genomic coordinates
                             PoGo_peptides=np.delete(PoGo_peptides,pep_row_index,0)     # REMOVE THE PEPTIDE FROM THE PoGo PEPTIDE TABLE
             
-        print('PoGo_peptides')
-        print(PoGo_peptides)
+        #print('PoGo_peptides')
+        #print(PoGo_peptides)
 
         if out_file_name:
-            self.make_sep_file(PoGo_peptides, out_file_name)
+            self.make_sep_file(out_file_name, PoGo_peptides, sep='\t')
             # -------------------------------------------- #
         
 
@@ -1428,6 +1440,7 @@ class Organism:
                 out_row += col_data
                 if (col_ind < number_of_columns): out_row += sep#'\t'
             out_row += '\n'
+            print(out_row)
             out_file_hand.write(out_row)
         out_file_hand.close()
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
