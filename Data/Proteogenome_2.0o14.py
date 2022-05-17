@@ -95,13 +95,6 @@ class Organism:
 
         Name History: load_input_table
 
-        This function upload in a np.array the PROTEOMICS DATA that must be visualised 
-        on the genome browser.
-        The format of this table is:
-
-                    Protein ID | Peptide Sequence | PTM | PSM | Peptide Intensity
-        
-
         INPUT :
         OUTPUT:
         """
@@ -119,38 +112,11 @@ class Organism:
         return input_tab
 
 
-    def load_generic_table(self, filename, sep='\t', PoGo=True):
+    def load_generic_table(self, filename, sep='\t'):
         """
-        Version: 2.0
+        Version: 1.0
 
         Name History: load_generic_table
-
-        This function returns a np.array that contains data readed from a formatted file.
-        There is only one parsing mode readable from this function. This mode is a separated fields
-        format. The separation element could be provided by the user (tab separation is the default)
-
-        PoGo WARNING:
-        Using PoGo software for mapping the peptides could generate A issus in the output file.
-        This problem is related to the chromosome number/name. For instance in bacteria annotations, 
-        instead of the chromosome number is reported the strain code. Compared to the 22 human chromosomes
-        (maximum only 2 chars long) the other organism strain IDs could be more than 10 characters. 
-        Unfortunately, PoGo cannot manage strain IDs and interprets them as chromosome IDs. As a result,
-        the chromosome ID max length will became the strain ID max length (from max 2 to >10 char).
-
-        Example:
-        Considering the HCMV Strain Merlin ID = NC_006273.2
-        The first three columns of the Peptide Map will be like this:  
-
-        Column Position  ----->   0                1            2
-                        |     Chromosome     |   Start    |    End     | ..........
-                        |       Number       | Coordinate | Coordinate | ..........
-                        |--------------------|------------|------------| ..........
-                        |   chrN C_006273.2  |  122714    |   122792   | ..........
-                                ^
-                                |
-                            This additional space will affect the map view in the genome browser.
-                            
-        If the flag PoGo is true the function will remove the space characters in the first table column.
 
         INPUT :
         OUTPUT:
@@ -171,14 +137,6 @@ class Organism:
             input_tab=np.concatenate([input_tab,[row]], axis=0)
         fh.close()
         input_tab=input_tab[1:,:]   # Remove initialisation row
-        
-        # If there is a space into the chromosome name field, 
-        # therefore PoGo has not been able to manage the name length.
-        if (' ' in input_tab[0,0]) & (PoGo==True):
-            for ind, col_0_row in enumerate(input_tab[:, 0]):
-                print(col_0_row)
-                input_tab[ind,0]=str(col_0_row).replace(' ','')                                  
-
         return input_tab
 
     def annot_to_df(self, annotations, annot_format ='gff3'):
@@ -991,9 +949,9 @@ class Organism:
         return peptide_tab
 
 
-    def filter_peptides(self, PoGo_peptides, out_file_name=''):
+    def filter_peptides(self, PoGo_peptides):
         """
-        Version: 1.1
+        Version: 1.0
 
         Name History: filter_peptides
 
@@ -1060,9 +1018,6 @@ class Organism:
             
         print('PoGo_peptides')
         print(PoGo_peptides)
-
-        if out_file_name:
-            self.make_sep_file(PoGo_peptides, out_file_name)
             # -------------------------------------------- #
         
 
