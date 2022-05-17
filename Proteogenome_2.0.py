@@ -99,7 +99,7 @@ class Organism:
         OUTPUT:
         """
         
-        input_tab=np.array([['','','','','']])
+        input_tab=np.array([['','','','','']], dtype='object')
 
         fh=open(filename, 'r')
         for row in fh:
@@ -904,6 +904,7 @@ class Organism:
         # print(' --------------- PTMs_to_remove ---------------\n',PTMs_to_remove)
         # print(' ***************** peptide_tab *****************\n',peptide_tab)
         
+        
         PTMs_code = {'phosphorylation' : '(phospho)'  , 'acetylation' : '(acetyl)', 'acetylation'      : '(acetyl)'    , 'amidation' : '(amidated)',                                  
                      'oxidation'       : '(oxidation)', 'methylation' : '(methyl)', 'ubiquitinylation' : '(glygly; gg)', 'sulfation' : '(sulfo)'   ,                 
                      'palmitoylation'  : '(palmitoyl)', 'formylation' : '(formyl)', 'deamidation'      : '(deamidated)'                 
@@ -940,7 +941,6 @@ class Organism:
                         peptide_PTM = peptide_PTM[:modification_position] + PTM_encoded + peptide_PTM[modification_position:] #Insert the PTM encoded in the peptide sequence
                         
                     #except:
-                    #    print(f'{modificatio_type.lower()} - {apply_PTM.lower()}')            
                     #    pass  # If you are on a peptide that reports 'None' in the modification field you have to skip the entire updating part
             
             
@@ -977,6 +977,7 @@ class Organism:
         protein_set=np.array([]) # Set of unique protein codes
 
         peptide_seq_array=coord_pep_strand[:,2]  # Consider all the peptide sequence
+        print('peptide_seq_array ----\n',peptide_seq_array)
         for pep_seq in peptide_seq_array:
             protein_block= self.pep_prot_index[pep_seq] # Fetch the protein codes where the current peptide has been found
             protein_set=np.concatenate((protein_set,protein_block))
