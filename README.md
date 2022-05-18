@@ -1,4 +1,3 @@
-README
 # Proteogenome
 ## A software for the visualization of proteomic data
 
@@ -17,6 +16,7 @@ README
 [The Peptide Map](#tpepm) </br>
 [The PTM Map](#tptmm) </br>
 [Visualise The Maps](#vtm) </br>
+[References](#r) </br>
   
 <a name="i"/></a></br>
 ### ***Introduction***
@@ -37,12 +37,21 @@ The activity to map the peptides on a reference genome is similar to reversing t
 Proteogenome performs a proteomic map where proteins and peptides are graphically located against the DNA strand from wich they have been translated. This is possible only if we can find the genomic coordinates of each amino acid. In other words, we need a genomic linkage between each protein sequence and the DNA sequence. 
 This linkage will be represented by the genomic annotations of the proteins that we are trying to map. Therefore, **it is necessary that each protein identified by the MS analysis has been also annotated in the reference genome used in the mapping operation**.
 
-Protein Map
-For the protein map the software will consider the protein codes provided by the MS analysis. These codes must be UniProt accession codes. Once collected these codes, Proteogenome will refer to the protein genomic annotations (in GFF3 format) to fetch the genomic coordinates. The final map will be a .bed track suitable for the IGV genome browser. The .bed format store the RGB code in the column 9. Proteogenome will consider the protein expression level in order to assign an RGB code according to a color gradient. The protein expression level will be obtained adding the intensity of all the peptides that belong to the specific protein.
+**Protein Map**
+For the protein map the software will consider the protein codes provided by the MS analysis. These codes must be UniProt accession codes. Once collected these codes, Proteogenome will refer to the protein genomic annotations (in GFF3 format) to fetch the genomic coordinates. In particular, it will consider the genomic coordinates of all the the DNA coding sequences that make up each protein (only the CDS annotations).The final map will be a .bed track suitable for the IGV genome browser. The .bed format store the RGB code in the column 9. Proteogenome will consider the protein expression level in order to assign an RGB code according to a color gradient. The protein expression level will be obtained adding the intensity of all the peptides that belong to the specific protein.
 
-Peptide Map
-Peptides are protein fragments of different sizes. For this reason, it is not possible to refer only to the protein genomic annotations in order to fetch the peptide genomic coordinates. Instead, it is necessary to find the protein coordinates of each peptide and subseuently refer to the protein genomic coordinates. Therefore, the peptide map can be generated moving from what could be called 'in protein coordinates' to 'in genome coordinates'  
+**Peptide Map**
+Peptides are protein fragments of different sizes. For this reason, it is not possible to refer only to the protein genomic annotations in order to fetch the peptide genomic coordinates. There are two reasons why annotations cannot be used to map the peptide directly:
 
+- First, if we consider an annotated genome, we can find different types of annotations. As described for the protein map, Proteogenome will only refer to CDS (coding regions). However, peptides are just protein fragments. Due to the genetic code, each position in the protein sequence will be represented by a three nucleotide codon in the DNA. Therefore, the genomic coordinates provided in the CDS annotations cannot be used as they are to represent a single peptide. 
+
+- Secondly, the protein sequences are obtained by combining several CDS blocks. This mechanism, called alternative splicing, increases the complexity of the task to identify the peptide genomic coordinates. Indeed, while a protein sequence could be represented as a contiguous series of amino acids, the set of CDS that make up this sequence could come from DNA regions sometimes very far away from each other. This means that from protein back to the genome, the amino acids' contiguous order would be no longer maintained in the genome coordinates. As a result, one peptide could map a protein region that has been generated from a DNA splicing event. In this case, the peptide sequence would have been generated considering two CDS blocks. In the final peptide map, this case must be represented by spliced peptides where each peptide fragment matches the CDS from which it comes. 
+
+These two aspects suggest that the peptide map is based on two main steps: 
+1. Fetching the **in protein coordinates**: align the peptide sequence to the protein sequence in order to find the position of the peptide in the protein sequence.
+2. Fetching the **in genome coordinates**: consider all the CDS involved in the protein sequence and convert the in protein coordinates into genomic coordinates using the CDS genomic annotations and the codon constrain.
+
+To accomplish this task we have choose the [PoGo](https://github.com/cschlaffner/PoGo) software.
 
 
 ### NOTES
@@ -173,3 +182,7 @@ Use the same menu options ***File*** - ***Load from File***
 
 #### 4. Upload the protein map
 Use the same menu option ***File*** - ***Load from File***
+
+---------------------------------------------------------------------------------------------------
+<a name="r"/></a></br>
+### ***References***
