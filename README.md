@@ -174,29 +174,31 @@ Pogo is a peptides mapping tool developed by [Schlaffner et all.](#ref1).
 | TYPE  | CONTENT |
 | ----  | ---- |
 | EXE   | [executable version of PoGo software](#mpptmpgev) |
-| FASTA | [reference genome of the specific organism (nucleotides)](#pifps) |
+| FASTA | [reference genome of the specific organism (nucleotides)](#pifrg) |
 | GTF   | [protein annotations](#mpptmpgpa) |
 | TXT   | [peptide table formatted for PoGo usage](#mpptmpgpt) |
  
 <a name="mpptmpgev"/></a></br>
-**EXE - executable version of PoGo**
+**EXE - executable version of PoGo** </br>
 In the PoGo repository is possible to download the [zip folders](https://github.com/cschlaffner/PoGo/releases) with source code and different versions of the software suitable for Windows, Mac and Linux. In the Proteogenome PoGo/ folder we have included the three executable versions of PoGo and the .jar user interface.
 
 <a name="mpptmpgpa"/></a></br>
-**GTF - protein annotations**
+**GTF - protein annotations** </br>
 PoGo works with the protein genomic annotations in GTF format. In the case of annotations in other formats, it will be necessary to convert the file in GTF.
 For instance, the annotations provided with Proteogenome are in GFF3 format and have been converted in GTF using [AGAT](https://github.com/NBISweden/AGAT). 
 
 <a name="mpptmpgpt"/></a></br>
-**TXT - peptide table formatted for PoGo usage**
+**TXT - peptide table formatted for PoGo usage** </br>
 PoGo can process input peptides data organized with this format: 
 
+| DATA              | DESCRIPTION |
+| ----------------- | ----------------- |
 | Experiment Tag    | The code or identifier that refers to source of data. |
 | Peptide Sequence  | The sequence of amino acid that make up the peptide (in capital letters) |
 | PSM               | Number of peptide-spectrum matches (PSMs) for the given peptide, if available from the MS/MS analysis. If not provided this value can be set to 1 (not 0) |
 | Peptide Intensity | Peptide intensity, from the MS/MS analysis. |
 
-Aside from the 'Experiment Tag' field, all the other data are a subset of the input [proteomics data](#p) file that is processed by Proteogenome. The peptide table must be a tab separated file. 
+Aside from the 'Experiment Tag' field, all the other data are a subset of the input [proteomics data](#pifpd) file that is processed by Proteogenome. The peptide table must be a tab separated file. 
 
 ---------------------------------------------------------------------------------------------------
 
