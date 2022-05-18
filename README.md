@@ -1,5 +1,5 @@
 # Proteogenome
-## A software for the visualization of proteomic data
+## A software for the visualization of proteomics data
 
 ### **TABLE OF CONTENTS**
 [Introduction](#i) </br>
@@ -66,6 +66,7 @@ To accomplish this task we have choose the [PoGo](https://github.com/cschlaffner
 PoGo can map also the PTMs that eventually occur on a peptide sequence. However, for the PTMs, it generates a separated .bed track where any type of post-transitional modification is highlighted with a colour code.   
 
 ![](Images/PTM_colour_code.JPG) 
+
 PTM colour code table from https://github.com/cschlaffner/PoGo
 
 <a name="hpwags"/></a></br>
@@ -114,35 +115,23 @@ NC_006273.2	RefSeq	exon	1356	2386	.	+	.	ID=exon-HHV5wtgp001-1;Parent=rna-HHV5wtg
 ### TXT - proteomics data
 Proteogenome can read proteomic data provided in CSV or TSV file. The table must contain the following data:
 
-- **Protein Accession** 
-    
-    UniProt protein accession codes
+- **Protein Accession** - UniProt protein accession codes
 
-- **Peptide Sequence**
-    
-    Amino Acids
+- **Peptide Sequence** - Amino Acids
 
-- **Peptide Modification**
-
-    The type and the position of the PTM inside the peptide.
+- **Peptide Modification** - The type and the position of the PTM inside the peptide.
     For instance, considering the line '3535' in the example table below. The Carbamidomethyl C(9) notation means that the PTM occours on the Cysteine at position 9 in this specific peptide. 
 
-- **Peptide PSMs**
-    
-    Number of peptide-spectrum matches (PSMs) for the given peptide, if available from the MS/MS analysis.
+- **Peptide PSMs** - Number of peptide-spectrum matches (PSMs) for the given peptide, if available from the MS/MS analysis.
 
-- **Peptide Intensity**
-    
-    Peptide intensity, from the MS/MS analysis. 
-
+- **Peptide Intensity** - Peptide intensity, from the MS/MS analysis. 
 
 
 Example Table:
 ![](Images/ProteomicsDataTable.jpg)
 
-**NOTES**
 The peptides table must include all the 5 columns.
-The value into the Peptide PSMs column must be at least 1 for each peptide (not 0). 
+The value in the Peptide PSMs column must be at least 1 for each peptide (not 0). 
 
 ### FASTA refernce genome (nucleotides)
 This additional FASTA file is not required by Proteogenome. It must contains the reference genome and should be required for map visualisation in the genome browser. 
