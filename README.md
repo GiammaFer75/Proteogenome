@@ -44,11 +44,11 @@ Proteogenome performs a proteomic map where proteins and peptides are graphicall
 This linkage will be represented by the genomic annotations of the proteins that we are trying to map. Therefore, **it is necessary that each protein identified by the MS analysis has been also annotated in the reference genome used in the mapping operation**.
 
 <a name="hpwpm"/></a></br>
-**Protein Map** </br>
+**Protein Map Overview** </br>
 For the protein map the software will consider the protein codes provided by the MS analysis. These codes must be UniProt accession codes. Once collected these codes, Proteogenome will refer to the protein genomic annotations (in GFF3 format) to fetch the genomic coordinates. In particular, it will consider the genomic coordinates of all the the DNA coding sequences that make up each protein (only the CDS annotations).The final map will be a .bed track suitable for the IGV genome browser. The .bed format store the RGB code in the column 9. Proteogenome will consider the protein expression level in order to assign an RGB code according to a color gradient. The protein expression level will be obtained adding the intensity of all the peptides that belong to the specific protein.
 
 <a name="hpwpepm"/></a></br>
-**Peptide Map** </br>
+**Peptide Map Overview** </br>
 Peptides are protein fragments of different sizes. For this reason, it is not possible to refer only to the protein genomic annotations in order to fetch the peptide genomic coordinates. There are two reasons why annotations cannot be used to map the peptide directly:
 
 - Firstly, if we consider an annotated genome, we can find different types of annotations. As described for the protein map, Proteogenome will only refer to CDS (coding regions). However, peptides are just protein fragments. Due to the genetic code, each position in the protein sequence will be represented by a three nucleotide codon in the DNA. Therefore, the genomic coordinates provided in the CDS annotations cannot be used as they are to represent a single peptide. 
@@ -199,6 +199,17 @@ PoGo can process input peptides data organized with this format:
 | Peptide Intensity | Peptide intensity, from the MS/MS analysis. |
 
 Aside from the 'Experiment Tag' field, all the other data are a subset of the input [proteomics data](#pifpd) file that is processed by Proteogenome. The peptide table must be a tab separated file. 
+
+***Check The Genomic Linkage*** 
+As stated in the [Peptide Map Overview](#hpwpepm) the possibility to map amino acids on the the DNA sequence is enabled by the genomic linkage. The main steps that generate this connection are the alignment with the protein sequence and subsequently the retriving of genomic coordinates on the annotations. Therefore, the file involved in the linkage are the [FASTA](#pifrg) protein sequences and the [GTF](#mpptmpgpa) protein annotations. However, PoGo looks for specific tags in each of these file formats. These tags are:
+  | FORMAT | RELEVANT TAGS                   | VALUES EXAMPLES |
+  | ------ | ------                          | ------          |
+  | FASTA  | **gene** - **transcript**       | **gene:** *HHV5wtgp001* **transcript:** *HHV5wtgp001* |
+  | GTF    | **gene_id** - **transcript_id** | **gene_id** *"gene-HHV5wtgp001";* **transcript_id** *"rna-HHV5wtgp001";* |
+
+PoGo can connect the FASTA alignmente to the genomic coordinates in the GTF annotations only if the tag values in FASTA and GTF are **unique**.
+
+However, these values are not guaranteed to be unique. For this reason, Proteogenome provides the functions that allow to manipulate the file formats. 
 
 ---------------------------------------------------------------------------------------------------
 
