@@ -14,7 +14,7 @@
 [The Protein Map](#tpm) </br>
 [Map Peptides and PTM With PoGo](#mppwp)
 - [PoGo Input Files](#pgif)
-- [Manage FASTA and GTF Tags](#mFaGt)
+- [Tags for The Genomic Linkage](#mpptmpgtgl)
 - [Use PoGo](#upg)
 - [PoGo Output Overview](#pgoo)
 
@@ -22,6 +22,8 @@
 [The PTM Map](#tptmm) </br>
 [Visualise The Maps](#vtm) </br>
 [References](#r) </br>
+
+[Appendix](#appendix) </br>
   
 <a name="i"/></a></br>
 ### ***Introduction***
@@ -170,7 +172,8 @@ my_Organism.protein_track(bed_fn='Protein.bed')
 ### ***Map Peptides and PTM With PoGo***
 Pogo is a peptides mapping tool developed by [Schlaffner et all.](#ref1).      
 
-***PoGo Input Files***
+<a name="pgif"/></a></br>
+***PoGo Input Files*** </br>
 | TYPE  | CONTENT |
 | ----  | ---- |
 | EXE   | [executable version of PoGo software](#mpptmpgev) |
@@ -200,7 +203,8 @@ PoGo can process input peptides data organized with this format:
 
 Aside from the 'Experiment Tag' field, all the other data are a subset of the input [proteomics data](#pifpd) file that is processed by Proteogenome. The peptide table must be a tab separated file. 
 
-***Check The Genomic Linkage*** 
+<a name="mpptmpgtgl"/></a></br>
+***Tags for The Genomic Linkage*** </br>
 As stated in the [Peptide Map Overview](#hpwpepm) the possibility to map amino acids on the the DNA sequence is enabled by the genomic linkage. The main steps that generate this connection are the alignment with the protein sequence and subsequently the retriving of genomic coordinates on the annotations. Therefore, the file involved in the linkage are the [FASTA](#pifrg) protein sequences and the [GTF](#mpptmpgpa) protein annotations. However, PoGo looks for specific tags in each of these file formats. These tags are:
   | FORMAT | RELEVANT TAGS     | VALUES EXAMPLES                        |
   | ------ | ------            | ------                                 |
@@ -208,10 +212,10 @@ As stated in the [Peptide Map Overview](#hpwpepm) the possibility to map amino a
   | FASTA  | **transcript**    | **transcript:** *HHV5wtgp001*          |  
   | GTF    | **gene_id**       | **gene_id** *"gene-HHV5wtgp001";*      |
   | GTF    | **transcript_id** | **transcript_id** *"rna-HHV5wtgp001";* |
-  
+
 PoGo can connect the FASTA alignmente to the genomic coordinates in the GTF annotations only if the tag values in FASTA and GTF are **unique**.
 
-However, these values are not guaranteed to be unique. For this reason, Proteogenome provides the functions that allow to manipulate the file formats. 
+However, these values are not guaranteed to be unique. For this reason, Proteogenome provides the functions that allow to manipulate the file formats. For an example of use see [Appendix](#appendix).
 
 ---------------------------------------------------------------------------------------------------
 
@@ -236,7 +240,153 @@ Use the same menu option ***File*** - ***Load from File***
 
 ---------------------------------------------------------------------------------------------------
 <a name="r"/></a></br>
-### ***References***
+## ***References***
 
 <a name="ref1"/></a></br>
 1. [Schlaffner, C., Pirklbauer, G.,  Bender, A. (2017). Fast, Quantitative and Variant Enabled Mapping of Peptides to Genomes. Cell Systems 5: 152–156](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5571441/)
+
+---------------------------------------------------------------------------------------------------
+
+<a name="appendix"/></a></br>
+## ***Appendix***
+
+The purpose of this example is to present some formats issues that could affect the GTF and FASTA files and suggest how to manage them using Proteogenome.
+
+This example has been developed using the annotation file (GFF3) and the FASTA sequence file provided in the Data/ folder of this repository. However, other annotation and FASTA files could present formats not compliant with PoGo that are completely different from what will be presented in this example. 
+
+After the conversion of the GFF3 file in GTF format, it is recomended to check the tags and their values.
+For this purpose use the method **.print_lst()**. 
+If the user finds a format issue, there are two methos that can help to fix them: **.rectify_rows()** - **.locus_tag_substitution()** - **.FASTA_cpt_seq**
+
+### FASTA
+
+#### 1. Inspect the FASTA  
+After the initialisation of the HCMV instance, the **HCMV.FASTA_lst** will be the attribute that stores the FASTA headers and sequences in a list. As mentioned in the [Tags for The Genomic Linkage](#mpptmpgtgl), in the FASTA, the relevant tags to inspect are **gene** and **transcript**.
+
+```sh
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+```
+
+```sh
+>lcl|NC_006273.2_prot_YP_081455.1_1 [gene=RL1] [locus_tag=HHV5wtgp001] [db_xref=GeneID:3077430] [protein=protein RL1] [protein_id=YP_081455.1] [location=1367..2299] [gbkey=CDS]
+----------------------------------------------------------------------------------------------------
+MPATDTNSTHTTPLHPEDQHTLPLHHSTTQPHVQTSDKHADKQHRTQMELDAADYAACAQARQHLYGQTQ
+----------------------------------------------------------------------------------------------------
+PQLHAYPNANPQESAHFRTENQHQLTNLLHNIGEGAALGYPVPRAEIRRGGGDWADSASDFDADCWCMWG
+----------------------------------------------------------------------------------------------------
+RFGTMGRQPVVTLLLARQRDGLADWNVVRCRGTGFRAHDSEDGVSVWRQHLVFLLGGHGRRVQLERPSAG
+----------------------------------------------------------------------------------------------------
+EAQARGLLPRIRITPISTSPRPKPPQPTTSTASHPHATARPDHTLFPVPSTPSATVHNPRNYAVQLHAET
+----------------------------------------------------------------------------------------------------
+TRTWRWARRGERGAWMPAETFTCPKDKRPW
+----------------------------------------------------------------------------------------------------
+```
+
+The output reveals several problems :
+- The headers lack of the relevant tags **gene** and **transcript**. This issue will avoid the right mapping between the FASTA alignment and the GTF annotations
+- The protein sequence is splitted in different rows. This will prevent that PoGo align the peptides over the entire protein sequence. here are square brackets that must be removed. Moreover, from a previous understanding of the sequence ontology of the HCMV, it would be necessary rely on the locus_tag value as valid protein ID. However, the header lacks of the relevant tags **gene** and **transcript**. Therefore, in this particular case the best strategy is to remove the "locus_tag" tag and use its value (***HHV5wtgp001***) to insert the **gene** and **transcript** tags.
+
+#### 2. Rectify FASTA headers - Remove Undesired Characters 
+The first method to use for fixing the errors present in this example is **.rectify_rows()**:
+```sh
+HCMV.FASTA_lst=HCMV.rectify_rows(HCMV.FASTA_lst,target_sub_str=[('lcl|NC_006273.2_prot_',''),
+                                                                ('[',''),
+                                                                (']',''),
+                                )
+```
+The "**target_sub_str**" parameter receives a list of tuples where the first element is a substring that must be replaced with the second element of the tuple. The meaning of these substitution tuples is as follows:
+- **('lcl|NC_006273.2_prot_','')** - means remove the substring *lcl|NC_006273.2_prot_*. We decided to remove this NCBI identifier to simplify the header parsing.
+- **('[','')  -  (']','')** - means remove the square brachets. These characters are not compliant with the PoGo parser. 
+
+```sh
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+```
+
+```sh
+>YP_081455.1_1 gene=RL1 locus_tag=HHV5wtgp001 db_xref=GeneID:3077430 protein=protein RL1 protein_id=YP_081455.1 location=1367:2299 gbkey=CDS
+----------------------------------------------------------------------------------------------------
+MPATDTNSTHTTPLHPEDQHTLPLHHSTTQPHVQTSDKHADKQHRTQMELDAADYAACAQARQHLYGQTQ
+----------------------------------------------------------------------------------------------------
+PQLHAYPNANPQESAHFRTENQHQLTNLLHNIGEGAALGYPVPRAEIRRGGGDWADSASDFDADCWCMWG
+----------------------------------------------------------------------------------------------------
+RFGTMGRQPVVTLLLARQRDGLADWNVVRCRGTGFRAHDSEDGVSVWRQHLVFLLGGHGRRVQLERPSAG
+----------------------------------------------------------------------------------------------------
+EAQARGLLPRIRITPISTSPRPKPPQPTTSTASHPHATARPDHTLFPVPSTPSATVHNPRNYAVQLHAET
+----------------------------------------------------------------------------------------------------
+TRTWRWARRGERGAWMPAETFTCPKDKRPW
+----------------------------------------------------------------------------------------------------
+```
+
+#### 3. Rectify FASTA headers - Insert Relevant Tags
+Because the header lacks of the relevant tags **gene** and **transcript**, it is necessary apply the method **.locus_tag_substitution()**.
+
+```sh
+HCMV.FASTA_lst=HCMV.locus_tag_substitution(HCMV.FASTA_lst)
+```
+
+This method remove the "locus_tag" and uses its value to generate the "gene" and "transcript" tags. 
+
+```sh
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+```
+
+```sh
+>YP_081455.1_1 gene=RL1 gene:HHV5wtgp001 transcript:HHV5wtgp001 db_xref=GeneID:3077430 protein=protein RL1 protein_id=YP_081455.1 location=1367:2299 gbkey=CDS
+----------------------------------------------------------------------------------------------------
+MPATDTNSTHTTPLHPEDQHTLPLHHSTTQPHVQTSDKHADKQHRTQMELDAADYAACAQARQHLYGQTQ
+----------------------------------------------------------------------------------------------------
+PQLHAYPNANPQESAHFRTENQHQLTNLLHNIGEGAALGYPVPRAEIRRGGGDWADSASDFDADCWCMWG
+----------------------------------------------------------------------------------------------------
+RFGTMGRQPVVTLLLARQRDGLADWNVVRCRGTGFRAHDSEDGVSVWRQHLVFLLGGHGRRVQLERPSAG
+----------------------------------------------------------------------------------------------------
+EAQARGLLPRIRITPISTSPRPKPPQPTTSTASHPHATARPDHTLFPVPSTPSATVHNPRNYAVQLHAET
+----------------------------------------------------------------------------------------------------
+TRTWRWARRGERGAWMPAETFTCPKDKRPW
+----------------------------------------------------------------------------------------------------
+```
+
+#### 4. Rectify FASTA headers - Remove Substring with Variable Parts
+At this point the issue is represented by the tag "***gene=RL1***". This tag could generate a conflict with the desired tag "gene:HHV5wtgp001" because both of them are "**gene**". However, this time the substring that we want to remove from the header is composed by two parts. One part is fixed ("gene="), while the second one is variable (in this protein header the id is "RL1", but this id changes over the protein set). For this reason, we need to pass another parameter to the method .rectify_rows(). With **target_patterns**, it is possible to provide a list of tuples where the pattern in the first position is substituted by a constant string in the second position of the tuple.
+
+```sh
+HCMV.FASTA_lst=HCMV.rectify_rows(HCMV.FASTA_lst, target_patterns=[('gene=.*?\s','')])
+```
+
+```sh
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+```
+
+```sh
+>YP_081455.1_1 gene:HHV5wtgp001 transcript:HHV5wtgp001 db_xref=GeneID:3077430 protein=protein RL1 protein_id=YP_081455.1 location=1367:2299 gbkey=CDS
+----------------------------------------------------------------------------------------------------
+MPATDTNSTHTTPLHPEDQHTLPLHHSTTQPHVQTSDKHADKQHRTQMELDAADYAACAQARQHLYGQTQ
+----------------------------------------------------------------------------------------------------
+PQLHAYPNANPQESAHFRTENQHQLTNLLHNIGEGAALGYPVPRAEIRRGGGDWADSASDFDADCWCMWG
+----------------------------------------------------------------------------------------------------
+RFGTMGRQPVVTLLLARQRDGLADWNVVRCRGTGFRAHDSEDGVSVWRQHLVFLLGGHGRRVQLERPSAG
+----------------------------------------------------------------------------------------------------
+EAQARGLLPRIRITPISTSPRPKPPQPTTSTASHPHATARPDHTLFPVPSTPSATVHNPRNYAVQLHAET
+----------------------------------------------------------------------------------------------------
+TRTWRWARRGERGAWMPAETFTCPKDKRPW
+----------------------------------------------------------------------------------------------------
+```
+
+#### 5. Rectify FASTA headers - Compact the Sequences
+The last issue is related to the fact that the output of the method .print_lst() is printing the protein sequence splitted by dashed lines. This means that the protein sequence is not a unique straight line. The method to use in this case is **.FASTA_cpt_seq()**.
+
+```sh
+HCMV.FASTA_lst=HCMV.FASTA_cpt_seq(HCMV.FASTA_lst)
+```
+
+```sh
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+```
+
+```sh
+>YP_081455.1_1 gene=RL1 gene:HHV5wtgp001 transcript:HHV5wtgp001 db_xref=GeneID:3077430 protein=protein RL1 protein_id=YP_081455.1 location=1367:2299 gbkey=CDS
+----------------------------------------------------------------------------------------------------
+MPATDTNSTHTTPLHPEDQHTLPLHHSTTQPHVQTSDKHADKQHRTQMELDAADYAACAQARQHLYGQTQPQLHAYPNANPQESAHFRTENQHQLTNLLHNIGEGAALGYPVPRAEIRRGGGDWADSASDFDADCWCMWGRFGTMGRQPVVTLLLARQRDGLADWNVVRCRGTGFRAHDSEDGVSVWRQHLVFLLGGHGRRVQLERPSAGEAQARGLLPRIRITPISTSPRPKPPQPTTSTASHPHATARPDHTLFPVPSTPSATVHNPRNYAVQLHAETTRTWRWARRGERGAWMPAETFTCPKDKRPW
+----------------------------------------------------------------------------------------------------
+```
+
+### GTF 
