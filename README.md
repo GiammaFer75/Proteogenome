@@ -10,10 +10,10 @@
 - [PTM Map Overview](#hpwptmm)
 - [The Allowed Genomic Space](#hpwags)
 
-[Mapping With PoGo](#mppwp) </br>
+[Mapping Peptides With PoGo](#mpwp) </br>
 - [PoGo Input Files](#pgif)
 - [Tags for The Genomic Linkage](#mpptmpgtgl)
-- [Run PoGo](#upg)
+- [Run PoGo](#mpwprp)
 - [PoGo Output Overview](#pgoo)
 
 [Proteogenome Input Files](#pif) </br>
@@ -149,7 +149,7 @@ CCATTCCGGGCCGTGTGCTGGGTCCCCGAGGGGCGGGGGGGTGTTTTCTGCGGGGGGGTGAAATTTGGAGTTGCGTGTGT
 ```
 ---------------------------------------------------------------------------------------------------
 
-<a name="mppwp"/></a></br>
+<a name="mpwp"/></a></br>
 ### ***Mapping With PoGo***
 
 Pogo is a peptides mapping tool developed by [Schlaffner et all.](#ref1).      
@@ -159,7 +159,7 @@ Pogo is a peptides mapping tool developed by [Schlaffner et all.](#ref1).
 | TYPE  | CONTENT |
 | ----  | ---- |
 | EXE   | [executable version of PoGo software](#mpptmpgev) |
-| FASTA | [reference genome of the specific organism (nucleotides)](#pifrg) |
+| FASTA | [protein sequences (amino acids)](#pifrg) |
 | GTF   | [protein annotations](#mpptmpgpa) |
 | TXT   | [peptide table formatted for PoGo usage](#mpptmpgpt) |
  
@@ -198,6 +198,11 @@ As stated in the [Peptide Map Overview](#hpwpepm) the possibility to map amino a
 PoGo can connect the FASTA alignmente to the genomic coordinates in the GTF annotations only if the tag values in FASTA and GTF are **unique**.
 
 However, these values are not guaranteed to be unique. For this reason, Proteogenome provides the functions that allow to manipulate the file formats. For an example of use see [Appendix](#appendix).
+
+<a name="mpwprp"/></a></br>
+***Run PoGo***
+
+In this tutorial will be discussed the PoGo usage through its graphic user interface (GUI) in a Windows system. The PoGoGUI can be found in the folder /PoGo of this repository. Inside the same folder, there are three additional folders that contain different versions of the software that could be run on Windows, Mac or Linux.  Once the FASTA and GTF files are ready to be processed by PoGo, the user must open the inter 
 
 ---------------------------------------------------------------------------------------------------
 
