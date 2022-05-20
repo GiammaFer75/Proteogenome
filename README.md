@@ -268,25 +268,12 @@ HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
 ![](Images/InspectTheFASTA.jpg)
+***Fig. FASTA_1***
 
-```sh
->lcl|NC_006273.2_prot_YP_081455.1_1 [gene=RL1] [locus_tag=HHV5wtgp001] [db_xref=GeneID:3077430] [protein=protein RL1] [protein_id=YP_081455.1] [location=1367..2299] [gbkey=CDS]
-----------------------------------------------------------------------------------------------------
-MPATDTNSTHTTPLHPEDQHTLPLHHSTTQPHVQTSDKHADKQHRTQMELDAADYAACAQARQHLYGQTQ
-----------------------------------------------------------------------------------------------------
-PQLHAYPNANPQESAHFRTENQHQLTNLLHNIGEGAALGYPVPRAEIRRGGGDWADSASDFDADCWCMWG
-----------------------------------------------------------------------------------------------------
-RFGTMGRQPVVTLLLARQRDGLADWNVVRCRGTGFRAHDSEDGVSVWRQHLVFLLGGHGRRVQLERPSAG
-----------------------------------------------------------------------------------------------------
-EAQARGLLPRIRITPISTSPRPKPPQPTTSTASHPHATARPDHTLFPVPSTPSATVHNPRNYAVQLHAET
-----------------------------------------------------------------------------------------------------
-TRTWRWARRGERGAWMPAETFTCPKDKRPW
-----------------------------------------------------------------------------------------------------
-```
 
 The output reveals several problems :
 - The headers lack of the relevant tags **gene** and **transcript**. This issue will avoid the right mapping between the FASTA alignment and the GTF annotations
-- The protein sequence is splitted in different rows. This will prevent that PoGo align the peptides over the entire protein sequence. here are square brackets that must be removed. Moreover, from a previous understanding of the sequence ontology of the HCMV, it would be necessary rely on the locus_tag value as valid protein ID. However, the header lacks of the relevant tags **gene** and **transcript**. Therefore, in this particular case the best strategy is to remove the "locus_tag" tag and use its value (***HHV5wtgp001***) to insert the **gene** and **transcript** tags.
+- The protein sequence is splitted in different rows. This will prevent that PoGo align the peptides over the entire protein sequence. There are square brackets that must be removed (Fig. FASTA_1 in red). Moreover, from a previous understanding of the sequence ontology of the HCMV, it would be necessary rely on the locus_tag value as valid protein ID. However, the header lacks of the relevant tags **gene** and **transcript**. Therefore, in this particular case the best strategy is to remove the "locus_tag" tag and use its value (***HHV5wtgp001***) to insert the **gene** and **transcript** tags.
 
 #### 2. Rectify FASTA headers - Remove Undesired Characters 
 The first method to use for fixing the errors present in this example is **.rectify_rows()**:
