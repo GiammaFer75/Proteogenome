@@ -267,6 +267,8 @@ After the initialisation of the HCMV instance, the **HCMV.FASTA_lst** will be th
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
+![](Images/InspectTheFASTA.jpg)
+
 ```sh
 >lcl|NC_006273.2_prot_YP_081455.1_1 [gene=RL1] [locus_tag=HHV5wtgp001] [db_xref=GeneID:3077430] [protein=protein RL1] [protein_id=YP_081455.1] [location=1367..2299] [gbkey=CDS]
 ----------------------------------------------------------------------------------------------------
@@ -390,3 +392,40 @@ MPATDTNSTHTTPLHPEDQHTLPLHHSTTQPHVQTSDKHADKQHRTQMELDAADYAACAQARQHLYGQTQPQLHAYPNAN
 ```
 
 ### GTF 
+
+#### 1. Upload the GTF Annotations   
+```sh
+HCMV.annot_lst=HCMV.file_to_lst(home+'Data/PoGo_Input_Files/HCMV_Protein_Annotations.gtf')
+```
+
+In the instance HCMV it is already present the attribute **.annot_lst**. This attribute contain the GFF3 annotations provided at the initialisation of the instance. Nevertheles, for PoGo we need to use the GTF annotations. For this reason, we upload the GTF file in the .annot_lst attribute.
+
+
+#### 2. Inspect the GTF
+```sh
+HCMV.print_lst(HCMV.annot_lst, limit=7)
+```
+
+```sh
+##gtf-version 3
+----------------------------------------------------------------------------------------------------
+NC_006273.2 RefSeq  gene    1356    2386    .   +   .   gene_id "gene-HHV5wtgp001"; Dbxref "GeneID:3077430"; ID "gene-HHV5wtgp001"; Name "RL1"; gbkey "Gene"; gene "RL1"; gene_biotype "protein_coding"; locus_tag "HHV5wtgp001";
+----------------------------------------------------------------------------------------------------
+NC_006273.2 RefSeq  transcript  1356    2386    .   +   .   gene_id "gene-HHV5wtgp001"; transcript_id "rna-HHV5wtgp001"; Dbxref "GeneID:3077430"; ID "rna-HHV5wtgp001"; Parent "gene-HHV5wtgp001"; experiment "Northern blot" "RACE"; gbkey "mRNA"; gene "RL1"; locus_tag "HHV5wtgp001"; original_biotype "mrna"; product "protein RL1";
+----------------------------------------------------------------------------------------------------
+NC_006273.2 RefSeq  exon    1356    2386    .   +   .   gene_id "gene-HHV5wtgp001"; transcript_id "rna-HHV5wtgp001"; Dbxref "GeneID:3077430"; ID "exon-HHV5wtgp001-1"; Parent "rna-HHV5wtgp001"; experiment "Northern blot" "RACE"; gbkey "mRNA"; gene "RL1"; locus_tag "HHV5wtgp001"; product "protein RL1";
+----------------------------------------------------------------------------------------------------
+NC_006273.2 RefSeq  CDS 1367    2299    .   +   0   gene_id "gene-HHV5wtgp001"; transcript_id "rna-HHV5wtgp001"; Dbxref "Genbank:YP_081455.1" "GeneID:3077430"; ID "cds-YP_081455.1"; Name "YP_081455.1"; Note "RL1 family"; Parent "rna-HHV5wtgp001"; gbkey "CDS"; gene "RL1"; locus_tag "HHV5wtgp001"; product "protein RL1"; protein_id "YP_081455.1";
+----------------------------------------------------------------------------------------------------
+NC_006273.2 RefSeq  five_prime_utr  1356    1366    .   +   .   gene_id "gene-HHV5wtgp001"; transcript_id "rna-HHV5wtgp001"; Dbxref "GeneID:3077430"; ID "nbis-five_prime_utr-1"; Parent "rna-HHV5wtgp001"; experiment "Northern blot" "RACE"; gbkey "mRNA"; gene "RL1"; locus_tag "HHV5wtgp001"; original_biotype "five_prime_UTR"; product "protein RL1";
+----------------------------------------------------------------------------------------------------
+NC_006273.2 RefSeq  three_prime_utr 2300    2386    .   +   .   gene_id "gene-HHV5wtgp001"; transcript_id "rna-HHV5wtgp001"; Dbxref "GeneID:3077430"; ID "nbis-three_prime_utr-1"; Parent "rna-HHV5wtgp001"; experiment "Northern blot" "RACE"; gbkey "mRNA"; gene "RL1"; locus_tag "HHV5wtgp001"; original_biotype "three_prime_UTR"; product "protein RL1";
+----------------------------------------------------------------------------------------------------
+```
+
+The first 7 rows of the GTF annotations represent the complete sequence ontology for the protein RL1. However, as described in the [Allowed Genomic Space](#hpwags) section, PoGo cannot map the CDS of this protein because the value of the relevant tags is not unique between FASTA and GTF. 
+So far, we have set in the FASTA tags as **gene:** ***HHV5wtgp001*** **transcript:** ***HHV5wtgp001***. 
+Instead, in the GTF we have **gene_id** "***gene-HHV5wtgp001***"; **transcript_id** "***rna-HHV5wtgp001***"
+For the correct genomic linkage there are two substring to remove "**gene-**" and "**rna-**".
+
+#### 3. Rectify GTF rows - Remove Undesired Substrings
