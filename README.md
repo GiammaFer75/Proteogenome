@@ -16,16 +16,20 @@
 - [Run PoGo](#mpwprp)
 - [PoGo Output Overview](#pgoo)
 
-[Proteogenome Input Files](#pif) </br>
-[The Protein Map](#tpm) </br>
+[Proteogenome Usage](#pu) </br>
+- [Proteogenome Input Files](#pif)
+- [Initialisation](#init)
+- [How to generate the Protein Map](#tpm)
+- [How to prepare the file for PoGo](#pffpg) 
+- [How to generate the Peptide Map](#tpepm) 
+- [How to generate the PTM Map](#tptmm)
+- [Visualise The Maps](#vtm) 
 
-
-[The Peptide Map](#tpepm) </br>
-[The PTM Map](#tptmm) </br>
-[Visualise The Maps](#vtm) </br>
 [References](#r) </br>
 
 [Appendix](#appendix) </br>
+- [FASTA Format Management](#FASTA)
+- [GTF Format Management](#GTF)
   
 <a name="i"/></a></br>
 ### ***Introduction***
@@ -201,30 +205,114 @@ However, these values are not guaranteed to be unique. For this reason, Proteoge
 
 <a name="mpwprp"/></a></br>
 ***Run PoGo***
+In this tutorial will be discussed the PoGo usage through its graphic user interface (GUI) in a Windows system. The PoGoGUI can be found in the folder /PoGo of this repository. Inside the same folder, there are three additional folders that contain different versions of the software that could be run on Windows, Mac or Linux. Open the PoGoGUI and input the [files](#pgif) as showed in the Fig. PoGoGUI. Click START.
 
-In this tutorial will be discussed the PoGo usage through its graphic user interface (GUI) in a Windows system. The PoGoGUI can be found in the folder /PoGo of this repository. Inside the same folder, there are three additional folders that contain different versions of the software that could be run on Windows, Mac or Linux.  Once the FASTA and GTF files are ready to be processed by PoGo, the user must open the inter 
+![](Images/PoGoInterface.JPG)
+
+---------------------------------------------------------------------------------------------------
+
+<a name="#pu"/></a></br>
+## ***Proteogenome Usage***
+
+
+<a name="init"/></a></br>
+## ***Initialisation*** 
+
+#### 1. Import Proteogenome and Set the paths
+```sh
+import Proteogenome as pg
+
+home='~/Data/'
+```
+
+#### 2. Create an instance of type *Organism*
+```sh
+HCMV=Pg.Organism(FASTA_filename=home+'HCMV_CodingSeq.fasta',
+                 annot_filename=home+'HCMV_Protein_Annotations.gff3',
+                 input_table_filename=home+'peptide_table.txt')
+```
+
+#### 3. Initialise the index tables
+```sh
+HCMV.initialise_indexes()
+```
 
 ---------------------------------------------------------------------------------------------------
 
 <a name="tpm"/></a></br>
-## ***The Protein Map*** 
+## ***How to generate the Protein Map*** 
 
-#### 1. Create an instance of type *Organism*
+#### 1. Generate the protein map
 ```sh
-my_Organism=Pg.Organism(FASTA_filename='HCMV_CodingSeq.fasta',
-                        annot_filename='HCMV_Protein_Annotations.gff3',
-                        input_table_filename='peptide_table.txt')
+HCMV.protein_track(bed_fn='Protein.bed')
 ```
 
-#### 2. Initialise the index tables
+---------------------------------------------------------------------------------------------------
+
+<a name="pffpg"/></a></br>
+## ***How to prepare the file for PoGo*** 
+
+#### 1. Generate the peptide input table
 ```sh
-my_Organism.initialise_indexes()
+HCMV.PoGo_input_table(out_file_name='PoGo_Input_Table.txt')
 ```
 
-#### 3. Generate the protein map
+#### 2. Inspect the FASTA sequences
 ```sh
-my_Organism.protein_track(bed_fn='Protein.bed')
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
+For the checking and management of the possible FASTA format issues refer to [FASTA Format Management](#FASTA) section.
+
+#### 3. Inspect the GTF annotations
+If the protein annotations have been provided in GFF3 format, they must be converted in the GTF format before inspect them.
+For the checking and management of the possible GTF format issue refer to [GTF Format Management](#GTF) section.
+
+#### 4. Ron PoGo and generate the peptide and the PTM maps
+In order to run Pogo, please refer to the section [Run PoGo](#mpwprp)
+
+---------------------------------------------------------------------------------------------------
+
+<a name="tpepm"/></a></br>
+## ***How to generate the Peptide Map*** 
+In order to run this section, it is assumed that the peptide map has been already created running PoGo.
+
+#### 1. Generate the peptide table
+You need to execute this command only if the PoGo_Input_Table is not yet created.
+```sh
+HCMV.PoGo_input_table(out_file_name='PoGo_Input_Table.txt')
+```
+
+#### 2. Load the peptide map in a separate variable
+```sh
+PoGo_peptide_map=HCMV.load_generic_table('PoGo_Input_Table.bed')
+```
+
+#### 3. Filter the peptide map with the Allowed Genomic Space 
+```sh
+HCMV.filter_peptides(PoGo_Input_Table.bed, 'Peptide_MAP.bed')
+```
+
+---------------------------------------------------------------------------------------------------
+
+<a name="tptmm"/></a></br>
+## ***How to generate the PTM Map*** 
+
+#### 1. Generate the peptide table
+You need to execute this command only if the PoGo_Input_Table is not yet created.
+```sh
+HCMV.PoGo_input_table(out_file_name='PoGo_Input_Table.txt')
+```
+
+#### 2. Load the PTM map in a separate variable
+```sh
+PoGo_PTM_map=HCMV.load_generic_table('PoGo_Input_Table_ptm.bed')
+```
+
+#### 3. Filter the peptide map with the Allowed Genomic Space 
+```sh
+HCMV.filter_peptides(PoGo_Input_Table.bed, 'PTM_Map.bed')
+```
+
 ---------------------------------------------------------------------------------------------------
 
 <a name="wtsd"/></a></br>
@@ -265,22 +353,26 @@ After the conversion of the GFF3 file in GTF format, it is recomended to check t
 For this purpose use the method **.print_lst()**. 
 If the user finds a format issue, there are two methos that can help to fix them: **.rectify_rows()** - **.locus_tag_substitution()** - **.FASTA_cpt_seq**
 
-### FASTA
+<a name="FASTA"/></a></br>
+### FASTA Format Management
 
 #### 1. Inspect the FASTA
 
-After the initialisation of the HCMV instance, the **HCMV.FASTA_lst** will be the attribute that stores the FASTA headers and sequences in a list. As mentioned in the [Tags for The Genomic Linkage](#mpptmpgtgl), in the FASTA, the relevant tags to inspect are **gene** and **transcript**.
+After the initialisation of the HCMV instance, the **HCMV.FASTA_lst** will be the attribute that stores the FASTA headers and sequences in a numpy array. As mentioned in the [Tags for The Genomic Linkage](#mpptmpgtgl), in the FASTA, the relevant tags to inspect are **gene** and **transcript**.
 
 ```sh
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
-![](Images/1_FASTA_InspectTheFASTA.JPG)                                               ***Fig. FASTA_1***
+![](Images/1_FASTA_InspectTheFASTA.JPG)                                               
+***Fig. FASTA_1***
 
 
 The output reveals several problems :
-- The headers lack of the relevant tags **gene** and **transcript**. This issue will avoid the right mapping between the FASTA alignment and the GTF annotations
-- The protein sequence is splitted in different rows. This will prevent that PoGo align the peptides over the entire protein sequence. There are square brackets that must be removed (Fig. FASTA_1 in red). Moreover, from a previous understanding of the sequence ontology of the HCMV, it would be necessary rely on the locus_tag value as valid protein ID. However, the header lacks of the relevant tags **gene** and **transcript**. Therefore, in this particular case the best strategy is to remove the "locus_tag" tag and use its value (***HHV5wtgp001***) to insert the **gene** and **transcript** tags.
+- The headers lack the relevant tags **gene** and **transcript**. This issue will avoid the proper mapping between the FASTA alignment and the GTF annotations. From a previous understanding of the sequence ontology of the HCMV, it would be necessary to rely on the locus_tag's value as a valid protein ID. Therefore, in this case, the best strategy could be to remove the "locus_tag" tag and use its value (***HHV5wtgp001***) as the value for the further **gene** and **transcript** tags.
+- The protein sequence is divided into several lines. This will prevent PoGo from aligning the peptides across the entire protein sequence. 
+- There are undesired square brackets that must be removed (Fig. FASTA_1 in red).  
+
 
 #### 2. Rectify FASTA headers - Remove Undesired Characters
 
@@ -299,7 +391,8 @@ The "**target_sub_str**" parameter receives a list of tuples where the first ele
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
-![](Images/2_FASTA_RemoveUndesiredCharacters.JPG)                                               ***Fig. FASTA_2***
+![](Images/2_FASTA_RemoveUndesiredCharacters.JPG)                                               
+***Fig. FASTA_2***
 
 #### 3. Rectify FASTA headers - Insert Relevant Tags
 
@@ -315,7 +408,8 @@ This method remove the "locus_tag" and uses its value (Fig. FASTA_2 in ble) to g
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
-![](Images/3_FASTA_InsertRelevantTags.JPG)                                               ***Fig. FASTA_3***
+![](Images/3_FASTA_InsertRelevantTags.JPG)                                               
+***Fig. FASTA_3***
 
 #### 4. Rectify FASTA headers - Remove Substring with Variable Parts
 
@@ -329,7 +423,8 @@ HCMV.FASTA_lst=HCMV.rectify_rows(HCMV.FASTA_lst, target_patterns=[('gene=.*?\s',
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
-![](Images/4_FASTA_CompactSequences.JPG)                                               ***Fig. FASTA_4***
+![](Images/4_FASTA_CompactSequences.JPG)                                               
+***Fig. FASTA_4***
 
 #### 5. Rectify FASTA headers - Compact the Sequences
 
@@ -343,10 +438,11 @@ HCMV.FASTA_lst=HCMV.FASTA_cpt_seq(HCMV.FASTA_lst)
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
-![](Images/5_FASTA_FINAL.JPG)                                               ***Fig. FASTA_5***
+![](Images/5_FASTA_FINAL.JPG)                                               
+***Fig. FASTA_5***
 
-
-### GTF 
+<a name="GTF"/></a></br>
+### GTF Format Management
 
 #### 1. Upload the GTF Annotations  
 
@@ -356,6 +452,8 @@ HCMV.annot_lst=HCMV.file_to_lst(home+'Data/PoGo_Input_Files/HCMV_Protein_Annotat
 
 In the instance HCMV it is already present the attribute **.annot_lst**. This attribute contain the GFF3 annotations provided at the initialisation of the instance. Nevertheles, for PoGo we need to use the GTF annotations. For this reason, we upload the GTF file in the .annot_lst attribute.
 
+In the Proteogenome repository the GFF3 annotations already converted in GTF format (using AGAT) are stored in the file *Data/PoGo_Input_Files/HCMV_Protein_Annotations.gtf*
+
 
 #### 2. Inspect the GTF
 
@@ -363,7 +461,8 @@ In the instance HCMV it is already present the attribute **.annot_lst**. This at
 HCMV.print_lst(HCMV.annot_lst, limit=7)
 ```
 
-![](Images/1_GTF_InspectGTF.JPG)                                               ***Fig. GTF_1***
+![](Images/1_GTF_InspectGTF.JPG)                                               
+***Fig. GTF_1***
 
 The first 7 rows of the GTF annotations represent the complete sequence ontology for the protein RL1 (Fig. GTF_1 in green). However, as described in the [Allowed Genomic Space](#hpwags) section, PoGo cannot map the CDS of this protein because the value of the relevant tags are not unique between the FASTA and the GTF. 
 So far, we have set the FASTA tags as follow: **gene:** as ***HHV5wtgp001*** and **transcript:** as ***HHV5wtgp001***. 
@@ -376,8 +475,10 @@ Therefore, in order to allow the correct mapping between the FASTA and the GTF, 
 HCMV.annot_lst=HCMV.rectify_rows(HCMV.annot_lst, target_sub_str=[('gene-',''), ('rna-','')])
 ```
 
-![](Images/2_GTF_FINAL.JPG)                                               ***Fig. GTF_2***
+![](Images/2_GTF_FINAL.JPG)                                               
+***Fig. GTF_2***
 
 Now it is possible to map the information from the FASTA sequence of the protein RL1 to the  GTF annotation for the unique CDS region of RL1.
 
-![](Images/FASTAGTFMapping.JPG)                                               ***Fig. FASTA - GTF Mapping***
+![](Images/FASTAGTFMapping.JPG)                                               
+***Fig. FASTA - GTF Mapping***
