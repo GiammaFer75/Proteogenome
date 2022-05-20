@@ -10,13 +10,15 @@
 - [PTM Map](#hpwptmm)
 - [The Allowed Genomic Space](#hpwags)
 
-[Proteogenome Input Files](#pif) </br>
-[The Protein Map](#tpm) </br>
-[Map Peptides and PTM With PoGo](#mppwp)
+[MappingWith PoGo](#mppwp)
 - [PoGo Input Files](#pgif)
 - [Tags for The Genomic Linkage](#mpptmpgtgl)
 - [Use PoGo](#upg)
 - [PoGo Output Overview](#pgoo)
+
+[Proteogenome Input Files](#pif) </br>
+[The Protein Map](#tpm) </br>
+
 
 [The Peptide Map](#tpepm) </br>
 [The PTM Map](#tptmm) </br>
@@ -147,29 +149,9 @@ CCATTCCGGGCCGTGTGCTGGGTCCCCGAGGGGCGGGGGGGTGTTTTCTGCGGGGGGGTGAAATTTGGAGTTGCGTGTGT
 ```
 ---------------------------------------------------------------------------------------------------
 
-<a name="tpm"/></a></br>
-## ***The Protein Map*** 
-
-#### 1. Create an instance of type *Organism*
-```sh
-my_Organism=Pg.Organism(FASTA_filename='HCMV_CodingSeq.fasta',
-                        annot_filename='HCMV_Protein_Annotations.gff3',
-                        input_table_filename='peptide_table.txt')
-```
-
-#### 2. Initialise the index tables
-```sh
-my_Organism.initialise_indexes()
-```
-
-#### 3. Generate the protein map
-```sh
-my_Organism.protein_track(bed_fn='Protein.bed')
-```
----------------------------------------------------------------------------------------------------
-
 <a name="mppwp"/></a></br>
-### ***Map Peptides and PTM With PoGo***
+### ***Mapping With PoGo***
+
 Pogo is a peptides mapping tool developed by [Schlaffner et all.](#ref1).      
 
 <a name="pgif"/></a></br>
@@ -219,6 +201,26 @@ However, these values are not guaranteed to be unique. For this reason, Proteoge
 
 ---------------------------------------------------------------------------------------------------
 
+<a name="tpm"/></a></br>
+## ***The Protein Map*** 
+
+#### 1. Create an instance of type *Organism*
+```sh
+my_Organism=Pg.Organism(FASTA_filename='HCMV_CodingSeq.fasta',
+                        annot_filename='HCMV_Protein_Annotations.gff3',
+                        input_table_filename='peptide_table.txt')
+```
+
+#### 2. Initialise the index tables
+```sh
+my_Organism.initialise_indexes()
+```
+
+#### 3. Generate the protein map
+```sh
+my_Organism.protein_track(bed_fn='Protein.bed')
+```
+---------------------------------------------------------------------------------------------------
 
 <a name="wtsd"/></a></br>
 ## ***Visulise the Map*** 
@@ -359,9 +361,9 @@ HCMV.print_lst(HCMV.annot_lst, limit=7)
 ![](Images/1_GTF_InspectGTF.JPG)                                               ***Fig. GTF_1***
 
 The first 7 rows of the GTF annotations represent the complete sequence ontology for the protein RL1 (Fig. GTF_1 in green). However, as described in the [Allowed Genomic Space](#hpwags) section, PoGo cannot map the CDS of this protein because the value of the relevant tags are not unique between the FASTA and the GTF. 
-So far, we have set in the FASTA tags as **gene:** ***HHV5wtgp001*** **transcript:** ***HHV5wtgp001***. 
-Instead, in the GTF we have **gene_id** "***gene-HHV5wtgp001***"; **transcript_id** "***rna-HHV5wtgp001***"
-For the correct genomic linkage there are two substring to remove "**gene-**" and "**rna-**" (Fig. GTF_1 in red).
+So far, we have set the FASTA tags as follow: **gene:** as ***HHV5wtgp001*** and **transcript:** as ***HHV5wtgp001***. 
+While, in the GTF we have **gene_id** as "***gene-HHV5wtgp001***"; and **transcript_id** as "***rna-HHV5wtgp001***".
+Therefore, in order to allow the correct mapping between the FASTA and the GTF, there are two substring that need to be removed: "**gene-**" and "**rna-**" (Fig. GTF_1 in red).
 
 #### 3. Rectify GTF rows - Remove Undesired Substrings
 
