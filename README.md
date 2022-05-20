@@ -292,7 +292,7 @@ The "**target_sub_str**" parameter receives a list of tuples where the first ele
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
-![](2_FASTA_RemoveUndesiredCharacters.JPG)                                               ***Fig. FASTA_2***
+![](Images/2_FASTA_RemoveUndesiredCharacters.JPG)                                               ***Fig. FASTA_2***
 
 #### 3. Rectify FASTA headers - Insert Relevant Tags
 
@@ -308,7 +308,7 @@ This method remove the "locus_tag" and uses its value (Fig. FASTA_2 in ble) to g
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
-![](3_FASTA_InsertRelevantTags.JPG)                                               ***Fig. FASTA_3***
+![](Images/3_FASTA_InsertRelevantTags.JPG)                                               ***Fig. FASTA_3***
 
 #### 4. Rectify FASTA headers - Remove Substring with Variable Parts
 
@@ -322,7 +322,7 @@ HCMV.FASTA_lst=HCMV.rectify_rows(HCMV.FASTA_lst, target_patterns=[('gene=.*?\s',
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
-![](4_FASTA_CompactSequences.JPG)                                               ***Fig. FASTA_4***
+![](Images/4_FASTA_CompactSequences.JPG)                                               ***Fig. FASTA_4***
 
 #### 5. Rectify FASTA headers - Compact the Sequences
 
@@ -336,7 +336,7 @@ HCMV.FASTA_lst=HCMV.FASTA_cpt_seq(HCMV.FASTA_lst)
 HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 ```
 
-![](5_FASTA_FINAL.JPG)                                               ***Fig. FASTA_5***
+![](Images/5_FASTA_FINAL.JPG)                                               ***Fig. FASTA_5***
 
 
 ### GTF 
@@ -356,7 +356,7 @@ In the instance HCMV it is already present the attribute **.annot_lst**. This at
 HCMV.print_lst(HCMV.annot_lst, limit=7)
 ```
 
-![](1_GTF_InspectGTF.JPG)                                               ***Fig. GTF_1***
+![](Images/1_GTF_InspectGTF.JPG)                                               ***Fig. GTF_1***
 
 The first 7 rows of the GTF annotations represent the complete sequence ontology for the protein RL1 (Fig. GTF_1 in green). However, as described in the [Allowed Genomic Space](#hpwags) section, PoGo cannot map the CDS of this protein because the value of the relevant tags are not unique between the FASTA and the GTF. 
 So far, we have set in the FASTA tags as **gene:** ***HHV5wtgp001*** **transcript:** ***HHV5wtgp001***. 
@@ -369,8 +369,8 @@ For the correct genomic linkage there are two substring to remove "**gene-**" an
 HCMV.annot_lst=HCMV.rectify_rows(HCMV.annot_lst, target_sub_str=[('gene-',''), ('rna-','')])
 ```
 
-![](2_GTF_FINAL.JPG)                                               ***Fig. GTF_2***
+![](Images/2_GTF_FINAL.JPG)                                               ***Fig. GTF_2***
 
 Now it is possible to map the information from the FASTA sequence of the protein RL1 to the  GTF annotation for the unique CDS region of RL1.
 
-![](FASTAGTFMapping.JPG)                                               ***Fig. FASTA - GTF Mapping***
+![](Images/FASTAGTFMapping.JPG)                                               ***Fig. FASTA - GTF Mapping***
