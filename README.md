@@ -5,15 +5,15 @@
 [Introduction](#i) </br>
 [What Proteogenome Does](#wpd) </br>
 [How Proteogenome Works](#hpw) </br>
-- [Protein Map](#hpwpm)
-- [Peptide Map](#hpwpepm)
-- [PTM Map](#hpwptmm)
+- [Protein Map Overview](#hpwpm)
+- [Peptide Map Overview](#hpwpepm)
+- [PTM Map Overview](#hpwptmm)
 - [The Allowed Genomic Space](#hpwags)
 
-[MappingWith PoGo](#mppwp)
+[Mapping With PoGo](#mppwp) </br>
 - [PoGo Input Files](#pgif)
 - [Tags for The Genomic Linkage](#mpptmpgtgl)
-- [Use PoGo](#upg)
+- [Run PoGo](#upg)
 - [PoGo Output Overview](#pgoo)
 
 [Proteogenome Input Files](#pif) </br>
@@ -188,7 +188,7 @@ Aside from the 'Experiment Tag' field, all the other data are a subset of the in
 <a name="mpptmpgtgl"/></a></br>
 ***Tags for The Genomic Linkage*** </br>
 As stated in the [Peptide Map Overview](#hpwpepm) the possibility to map amino acids on the the DNA sequence is enabled by the genomic linkage. The main steps that generate this connection are the alignment with the protein sequence and subsequently the retriving of genomic coordinates on the annotations. Therefore, the file involved in the linkage are the [FASTA](#pifrg) protein sequences and the [GTF](#mpptmpgpa) protein annotations. However, PoGo looks for specific tags in each of these file formats. These tags are:
-  | FORMAT | RELEVANT TAGS     | VALUES EXAMPLES                        |
+  | FORMAT | RELEVANT TAGS     | VALUE EXAMPLES                         |
   | ------ | ------            | ------                                 |
   | FASTA  | **gene**          | **gene:** *HHV5wtgp001*                |
   | FASTA  | **transcript**    | **transcript:** *HHV5wtgp001*          |  
