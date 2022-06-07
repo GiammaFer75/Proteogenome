@@ -5,6 +5,7 @@
 [Introduction](#i) </br>
 [What Proteogenome Does](#wpd) </br>
 [How Proteogenome Works](#hpw) </br>
+- [Proteogenome Workflow](#hpwpwf)
 - [Protein Map Overview](#hpwpm)
 - [Peptide Map Overview](#hpwpepm)
 - [PTM Map Overview](#hpwptmm)
@@ -33,7 +34,7 @@
   
 <a name="i"/></a></br>
 ### ***Introduction***
-This software has been developed considering the mass spectrometry (MS) analysis process. In general, the mass spectrometers generate peptide raw data. If not further processed, these data are not very informative. For this reason, onboard the mass spectrometer appliances, specific software are often available. These tools perform the data analysis allowing the peptide sequences identification, if present where occur the post transitional modifications (PTM) in the peptide sequence and the proteins identification (providing the ID codes) from which the peptides come. Our purpose is to represent these data on a genome browser giving the opportunity to have an overview of three main feature of these proteomics data:
+This software was developed considering the mass spectrometry (MS) analysis process. In general, mass spectrometers generate peptide raw data. If not further processed, this data is not very informative. For this reason, specific software is often available on board the mass spectrometer equipment. These tools perform data analysis allowing: identification of peptide sequences, post-transitional modifications (PTMs) in the peptide sequence (if present) and identification of proteins (providing ID codes) from which the peptides originate. Our purpose is to represent these data on a genome browser giving the opportunity to have an overview of three main feature of these proteomics data:
 - which parts of the DNA are expressed (protein map) 
 - how intese has been this expression (protein map color coding)
 - which peptides confirm the presence of a protein and where they are located (peptide map)
@@ -50,6 +51,19 @@ The Proteogenome output will be the protein and the peptide map in BED file form
 The activity to map the peptides on a reference genome is similar to reversing the Central Dogma of Molecular Biology moving from the polypeptide chain to the DNA sequence made of nucleotides.
 Proteogenome performs a proteomic map where proteins and peptides are graphically located against the DNA strand from wich they have been translated. This is possible only if we can find the genomic coordinates of each amino acid. In other words, we need a genomic linkage between each protein sequence and the DNA sequence. 
 This linkage will be represented by the genomic annotations of the proteins that we are trying to map. Therefore, **it is necessary that each protein identified by the MS analysis has been also annotated in the reference genome used in the mapping operation**.
+
+<a name="hpwpwf"/></a></br>
+**Proteogenome Worflow** </br></br>
+![](Images/ProteogenomeWorkflow.JPG) </br>
+In this image is represented the workflow that implements the data visualisation process. While MS/MS block is unknown, because it represents the software onboard the specific mass spectrometer, the other software involved in this workflow are PoGo and IGV. There are three data pathways that manage three different input data map generation: proteins (in *cyan*), peptides (in *yellow*) and PTM (in *dark green*)
+The solid boxes represent data along the entire workflow. Since the data are manipulated at each step of the workflow, the solid boxes are enclosed into the software boxes in charge of the specific manipulation. 
+
+The software exception is represented by the two Proteogenome boxes. The first box, embedded in the MS/MS block, shows how Proteogenome is used to prepare data for the further steps in the workflow. Because we do not know how the data are formatted in the proteomics input table, it is possible that some pre-processing steps should be performed along the workflow.
+The second exception is a Proteogenome box embedded in the REFERENCE ORGANISM box. Since this workflow involves three software (PoGo, IGV, Proteogenome), it is possible that different software could process different file formats. Therefore, we thought about equipping our software with conversion in scripts in order to fit the data for the specific tool involved in our workflow.
+
+The purple box **Protein Intensities** represents the data exception. It has been represented outside the Proteogenome box because these data will not visualise. Instead, they are necessary for the generation of the **Protein Map** and could be considered as intermediate data generated and consumed by Proteogenome.
+
+The **REFERENCE ORGANISM** box represents the reference input data necessary for the alignment and mapping operations. Since Proteogenome is not intended for the *de novo* mapping activity, it will be possible to visualise proteins, peptides and PTMs only if we have data from the reference organism. In general, these data are the protein sequences and the protein annotations, but for IGV it is necessary to provide the whole genome DNA sequence in a single FASTA record.    
 
 <a name="hpwpm"/></a></br>
 **Protein Map Overview** </br>
