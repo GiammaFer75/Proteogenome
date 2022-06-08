@@ -10,7 +10,8 @@
 
 import numpy as np
 import pandas as pd
-from random import randrange
+import random
+#from random import randrange
 from matplotlib import colors
 import re
 
@@ -1213,7 +1214,7 @@ class Organism:
 
         FASTA_in_lst= copy.deepcopy(self.FASTA_lst)
 
-        dummy_input_matrix = np.array([['','','','','']])
+        dummy_input_matrix = np.array([['','','','','']], dtype=object)
         table_row=[]
         current_protein=True # This boolean signals if the data belong to the current protein. 
                              # This is used for combine the protein ID from the FASTA header with his sequence.
@@ -1300,13 +1301,15 @@ class Organism:
         return CDS_ind
 
 
-    def dummy_input_nparrays(self, peptides='', out_file_name='', dummy_exp_name = 'exp1',
-                             prot_sequences_FASTA_fn='', pep_min_length=4, pep_max_length=30,
-                             PSMs_range=1, pep_int_range=[100,10000]):
+    def dummy_input_nparrays(self, peptides='', pep_table_fn='dummy_peptide_table.txt', 
+                             ID_search_pattern='.*?gene=(.*?)\s',
+                             dummy_exp_name = 'exp1', pep_min_length=4, pep_max_length=30,
+                             PSMs_range=1, pep_int_range=[100,10000],
+                             pept_percentage=0, PTM_percentage=0):
         """
-        Version: 1.0
+        Version: 2.0
 
-        Name History: dummy_PoGo_peptides - dummy_input   
+        Name History: dummy_PoGo_peptides - dummy_input - dummy_input_nparrays  
 
         This function generates a file .txt that contains dummy peptides in a format suitable for PoGo software.
 
@@ -1315,22 +1318,25 @@ class Organism:
                 dummy_exp_name  Str         Dummy experiment name.
         OUTPUT:
         """
+        PTMs_types = ['phosphorylation', 'acetylation', 'acetylation', 'amidation', 'oxidation', 'methylation',                 
+                      'ubiquitinylation', 'sulfation', 'palmitoylation', 'formylation', 'deamidation']
 
-        prot_ID_pat = re.compile(r'.*?gene=.*?(.*?)\slocus_tag=') # Pattern for protein ID
+        prot_ID_pat = re.compile(r''+ ID_search_pattern +'') # Pattern for protein ID
 
         #FASTA_in_lst = self.file_to_lst(prot_sequences_FASTA_fn) # Upload the FASTA file with protein sequences in a list 
-        FASTA_in_lst = self.FASTA_cpt_seq(self.FASTA_lst)         # Compact possible multilines sequences       
+        #FASTA_in_lst = self.FASTA_cpt_seq(self.FASTA_lst)         # Compact possible multilines sequences       
 
         #self.dummy_input_matrix = np.array([['','','','']])
-        self.dummy_input_matrix = np.empty((0,4)) 
+        self.dummy_input_matrix = np.empty((0,2)) 
         table_row=[]
         current_protein=True # This boolean signals if the data belong to the current protein. 
                              # This is used for combine the protein ID from the FASTA header with his sequence.
 
-        for ind,prot_sequence in enumerate(FASTA_in_lst): # Iterate over the list that contains the FASTA file rows.
+        for ind,prot_sequence in enumerate(self.FASTA_lst): # Iterate over the list that contains the FASTA file rows.
             #if ind>4: break # ################REMOVE THIS ROW IN THE FINAL VERSION################
             if prot_sequence[0] == '>':# This condition is for the FASTA headers.
                 protein_ID=prot_ID_pat.match(prot_sequence).group(1) # Extract the PROTEIN ID
+                
                 current_protein=True       # Signals that the next rows belongs to this protein.
             else:                   # Generate the group of PEPTIDES that belong to the current protein.
                 current_prot_pep=self.dummy_peptides(prot_sequence,pep_min_length, pep_max_length) 
@@ -1340,43 +1346,97 @@ class Organism:
                 for new_peptide in current_prot_pep: # Iterate over the peptides generated from the current protein sequence.
                     
                     current_prot_pep=np.array([protein_ID,new_peptide],dtype=object) # Convert the list in a np.array.
-                    
+                    #print(current_prot_pep)
             # else:
             #     PSMs_col=np.ones(np.shape(self.dummy_input_matrix)[0]) # Otherwise the PSM value is 1 for all the peptides
                     
                     # print(current_prot_pep)
                     # print(self.dummy_input_matrix)
+                    #print(self.dummy_input_matrix.shape,current_prot_pep.shape)
                     self.dummy_input_matrix=np.append(self.dummy_input_matrix, [current_prot_pep],axis=0)
         
+        total_peptides=np.shape(self.dummy_input_matrix)[0]
+
         print('INPUT MATRIX')
         print(f'Type input matrix - {type(self.dummy_input_matrix)}')
         print(f'Shape input matrix - {np.shape(self.dummy_input_matrix)}')
         print(f'input matrix -\n{self.dummy_input_matrix}')  
+        
         # ******* GENERATE PEPTIDE PSMs ******* #
 
         if type(PSMs_range)==list:   # lower | upper  | Generates an array of random values with the      
                                      # bound | bound  | same number of rows present in the input table.
-            PSMs_col=np.random.randint(PSMs[0],PSMs[1],size=np.shape(self.dummy_input_matrix)[0])
+            PSMs_col=np.random.randint(PSMs[0],PSMs[1],size=np.shape(total_peptides))
         else:
-            PSMs_col=np.ones(np.shape(self.dummy_input_matrix)[0]) # Otherwise the PSM value is 1 for all the peptides
+            PSMs_col=np.ones(total_peptides,dtype=np.int8) # Otherwise the PSM value is 1 for all the peptides
         PSMs_col=np.reshape(PSMs_col,(-1,1)) # The unspecified value is inferred to be the number of rows
-        # PSMs_col=np.array([PSMs_col])
-        # PSMs_col=PSMs_col.T
         print('\n\n---------------------------------------------------------------')
-        print('NEW COLUMN')
+        print('PSMs column')
         print(f'Type new column - {type(PSMs_col)}')
         print(f'Shape new column - {np.shape(PSMs_col)}')
         print(f'new column - \n{PSMs_col}')
-        self.dummy_input_matrix=np.concatenate((self.dummy_input_matrix, PSMs_col),axis=1)
-        #self.dummy_input_matrix=np.append(self.dummy_input_matrix, PSMs_col,axis=1)
-
-
+        
         # ******* GENERATE PEPTIDE INTENSTIES ******* #
+        pep_inten_col=np.random.randint(pep_int_range[0],pep_int_range[1],total_peptides)
+        pep_inten_col=np.reshape(pep_inten_col,(-1,1)) # The unspecified value is inferred to be the number of rows
+        print('\n\n---------------------------------------------------------------')
+        print('pep_inten_col')
+        print(f'Type new column - {type(pep_inten_col)}')
+        print(f'Shape new column - {np.shape(pep_inten_col)}')
+        print(f'new column - \n{pep_inten_col}')
 
-        pep_inten_col=np.random.randint(pep_int_range[0],pep_int_range[1],
-                                   np.shape(self.dummy_input_matrix)[0])
+        print('-'*10,'\nCONCATENATE PSM - intensities\n')
+        PSM_int_cols=np.concatenate((PSMs_col,pep_inten_col),axis=1)
+        print(PSM_int_cols)
 
-        self.dummy_input_matrix=np.concatenate((self.dummy_input_matrix, pep_inten_col), axis=1)
+        # ******* GENERATE PTMs ******* #
+        PTM_none=np.repeat('None', total_peptides)
+        PTM_none=np.reshape(PTM_none,(-1,1)) # The unspecified value is inferred to be the number of rows
+        print('\n\n---------------------------------------------------------------')
+        print('PTM_none')
+        print(f'Type new column - {type(PTM_none)}')
+        print(f'Shape new column - {np.shape(PTM_none)}')
+        print(f'new column - \n{PTM_none}')
+
+        print('-'*10,'\nCONCATENATE PTM - PSM - intensities\n')
+        PTM_PSM_int_cols=np.concatenate((PTM_none,PSM_int_cols),axis=1)
+        print(PTM_PSM_int_cols)
+
+
+        print('-'*10,'\nCONCATENATE \n')
+        self.dummy_input_matrix=np.concatenate((self.dummy_input_matrix, PTM_PSM_int_cols),axis=1)
+        print(self.dummy_input_matrix)
+        # PSMs_col=np.array([PSMs_col])
+        # PSMs_col=PSMs_col.T
+        # print('\n\n---------------------------------------------------------------')
+        # print('NEW COLUMN')
+        # print(f'Type new column - {type(PSMs_col)}')
+        # print(f'Shape new column - {np.shape(PSMs_col)}')
+        # print(f'new column - \n{PSMs_col}')
+        # self.dummy_input_matrix=np.concatenate((self.dummy_input_matrix, PSM_int_cols),axis=1)
+        # #self.dummy_input_matrix=np.append(self.dummy_input_matrix, PSMs_col,axis=1)
+        
+        # ++++++++++++++++++ EXTRACT THE PEPTIDE PERCENTAGE ++++++++++++++++++ #
+        np.random.shuffle(self.dummy_input_matrix)
+        peptide_shrinking=(total_peptides*pept_percentage)//100
+        self.dummy_input_matrix=self.dummy_input_matrix[0:peptide_shrinking,:]
+        
+        # /////////////////// APPLY THE PTM PERCENTAGE \\\\\\\\\\\\\\\\\\ #
+        if PTM_percentage!=0:
+            PTM_quantity=(peptide_shrinking*PTM_percentage)//100 
+            for pep_ind in range(PTM_quantity):
+                pep_row=self.dummy_input_matrix[pep_ind,:] # Consider the current peptide in the shrinked subset
+                PTM_pos=random.randint(0, len(pep_row[1])-1)
+                PTM_amino_acid=pep_row[1][PTM_pos]
+                PTM_type=random.choice(PTMs_types)
+                PTM=PTM_type + ' (' + PTM_amino_acid + str(PTM_pos) + ')' # generate the PTM encoding
+                self.dummy_input_matrix[pep_ind,2]=PTM                    # write the PTM encoding in the peptide row
+
+        self.make_sep_file(pep_table_fn, self.dummy_input_matrix, sep='\t')
+        # pep_inten_col=np.random.randint(pep_int_range[0],pep_int_range[1],
+        #                            np.shape(self.dummy_input_matrix)[0])
+
+        # self.dummy_input_matrix=np.concatenate((self.dummy_input_matrix, pep_inten_col), axis=1)
 
 #********************** File creation
     #     PSM   = np.ones(len(peptides,), dtype=int)
@@ -1440,7 +1500,7 @@ class Organism:
                 out_row += col_data
                 if (col_ind < number_of_columns): out_row += sep#'\t'
             out_row += '\n'
-            print(out_row)
+            
             out_file_hand.write(out_row)
         out_file_hand.close()
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
