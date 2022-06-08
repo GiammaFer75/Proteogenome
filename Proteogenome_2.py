@@ -112,7 +112,8 @@ class Organism:
         for row in fh:
             row=row.split(sep)
             row=np.array(row[:-1])
-            row[-1]=row[-1].replace('\n','')
+            #row[-1]=row[-1].replace('\n','')
+            print(row)
             input_tab=np.concatenate([input_tab,[row]], axis=0)
         fh.close()
         input_tab=input_tab[1:,:]   # Remove initialisation row
