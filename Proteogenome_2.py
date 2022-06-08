@@ -102,7 +102,6 @@ class Organism:
 
                     Protein ID | Peptide Sequence | PTM | PSM | Peptide Intensity
         
-
         INPUT :
         OUTPUT:
         """
@@ -112,7 +111,7 @@ class Organism:
         fh=open(filename, 'r')
         for row in fh:
             row=row.split(sep)
-            row=np.array(row)
+            row=np.array(row[:-1])
             row[-1]=row[-1].replace('\n','')
             input_tab=np.concatenate([input_tab,[row]], axis=0)
         fh.close()
