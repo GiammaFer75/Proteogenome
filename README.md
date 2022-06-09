@@ -258,7 +258,7 @@ HCMV.initialise_indexes()
 
 #### 1. Generate the protein map
 ```sh
-HCMV.protein_track(bed_fn=home+'Protein.bed')
+HCMV.protein_track(bed_fn=home+'Protein_MAP.bed')
 ```
 
 ---------------------------------------------------------------------------------------------------
@@ -290,20 +290,15 @@ In order to run Pogo, please refer to the section [Run PoGo](#mpwprp)
 ## ***How to generate the Peptide Map*** 
 In order to run this section, it is assumed that the peptide map has been already created running PoGo.
 
-#### 1. Generate the peptide table
-You need to execute this command only if the PoGo_Input_Table is not yet created.
+
+#### 1. Load the peptide map in a separate variable
 ```sh
-HCMV.PoGo_input_table(out_file_name='PoGo_Input_Table.txt')
+PoGo_peptide_map=HCMV.load_generic_table(home+'PoGo_Input_Table.bed')
 ```
 
-#### 2. Load the peptide map in a separate variable
+#### 2. Filter the peptide map with the Allowed Genomic Space 
 ```sh
-PoGo_peptide_map=HCMV.load_generic_table('PoGo_Input_Table.bed')
-```
-
-#### 3. Filter the peptide map with the Allowed Genomic Space 
-```sh
-HCMV.filter_peptides(PoGo_Input_Table.bed, 'Peptide_MAP.bed')
+HCMV.filter_peptides(PoGo_peptide_map, home+'Peptide_MAP.bed')
 ```
 
 ---------------------------------------------------------------------------------------------------
@@ -311,20 +306,15 @@ HCMV.filter_peptides(PoGo_Input_Table.bed, 'Peptide_MAP.bed')
 <a name="tptmm"/></a></br>
 ## ***How to generate the PTM Map*** 
 
-#### 1. Generate the peptide table
-You need to execute this command only if the PoGo_Input_Table is not yet created.
+
+#### 1. Load the PTM map in a separate variable
 ```sh
-HCMV.PoGo_input_table(out_file_name='PoGo_Input_Table.txt')
+PoGo_PTM_map=HCMV.load_generic_table(home+'PoGo_Input_Table_ptm.bed')
 ```
 
-#### 2. Load the PTM map in a separate variable
+#### 2. Filter the peptide map with the Allowed Genomic Space 
 ```sh
-PoGo_PTM_map=HCMV.load_generic_table('PoGo_Input_Table_ptm.bed')
-```
-
-#### 3. Filter the peptide map with the Allowed Genomic Space 
-```sh
-HCMV.filter_peptides(PoGo_Input_Table.bed, 'PTM_Map.bed')
+HCMV.filter_peptides(PoGo_PTM_map, home+'PTM_MAP.bed')
 ```
 
 ---------------------------------------------------------------------------------------------------
@@ -461,7 +451,7 @@ HCMV.print_lst(HCMV.FASTA_lst, limit=6)
 #### 1. Upload the GTF Annotations  
 
 ```sh
-HCMV.annot_lst=HCMV.file_to_lst(home+'Data/PoGo_Input_Files/HCMV_Protein_Annotations.gtf')
+HCMV.annot_lst=HCMV.file_to_lst(home+'PoGo_Input_Files/HCMV_Protein_Annotations.gtf')
 ```
 
 In the instance HCMV it is already present the attribute **.annot_lst**. This attribute contain the GFF3 annotations provided at the initialisation of the instance. Nevertheles, for PoGo we need to use the GTF annotations. For this reason, we upload the GTF file in the .annot_lst attribute.
@@ -491,6 +481,15 @@ HCMV.annot_lst=HCMV.rectify_rows(HCMV.annot_lst, target_sub_str=[('gene-',''), (
 
 ![](Images/2_GTF_FINAL.JPG)                                               
 ***Fig. GTF_2***
+
+#### 4. Rectify GTF rows - Copy desired tag value on the gene_id field
+
+Although the first rows show a perfect match between the tags gene_id and transcript_id, this condition is not maintained along the annotation rows. In this case, it is necessary to perform a substitution of tag copying the **locus_tag** value in the **gene_id** tag. 
+
+```sh
+HCMV.annot_lst=HCMV.rectify_rows(HCMV.annot_lst, open_patterns=[('.*?gene_id\s\"(.*?)\"','.*?locus_tag\s\"(.*?)\"')])
+```
+
 
 Now it is possible to map the information from the FASTA sequence of the protein RL1 to the  GTF annotation for the unique CDS region of RL1.
 

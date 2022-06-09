@@ -113,7 +113,6 @@ class Organism:
             row=row.split(sep)
             row=np.array(row[:-1])
             #row[-1]=row[-1].replace('\n','')
-            print(row)
             input_tab=np.concatenate([input_tab,[row]], axis=0)
         fh.close()
         input_tab=input_tab[1:,:]   # Remove initialisation row
@@ -387,11 +386,13 @@ class Organism:
         """
         
         prot_ID_array = np.unique(pep_input_table[:, 0]) # Extract the protein IDs
-        print(prot_ID_array)
-         
+        print('Protein ID array\n----------------\n',prot_ID_array)
+        print('\n-------------------------\nGROUP PEPTIDES BY PROTEIN\n')
+                 
         for protein in prot_ID_array:
             peptides_block =  self.groupby_protein(pep_input_table, protein) # Group the peptides that belong to the current protein.
             self.prot_pep_index[protein] = peptides_block
+            print(protein,'--\n',peptides_block)
 
     
     def groupby_peptide(self, pep_input_table, peptide_sequence):
@@ -425,8 +426,8 @@ class Organism:
  
         """
         peptide_seq_array = np.unique(pep_input_table[:, 1]) # Extract the protein IDs
-        print(peptide_seq_array)
-         
+        print('\nPeptide sequences array\n-----------------------\n',peptide_seq_array)
+               
         for peptide in peptide_seq_array:
             protein_block =  self.groupby_peptide(pep_input_table, peptide) # Group the peptides that belong to the current protein.
             self.pep_prot_index[peptide] = protein_block
@@ -551,8 +552,8 @@ class Organism:
             if min_intensity>inten_sum: min_intensity=inten_sum
         
         print(f'{len(self.prot_pep_index)} - {len(self.prot_CDS_index)}')
-        RGB_tup = generate_color_gradient(color_lst=['gray','blue','green','yellow','red'],
-                                             reverse_gradient=False)
+        RGB_tup = generate_color_gradient(color_lst=['blue','green','yellow','red'],
+                                             reverse_gradient=False)#'gray',
         prot_expressions_rescaled = exprlev_resc_RGB(intensities,RGB_tup)
         #print(len(prot_expressions_rescaled))
         prot_expressions_RGB=vectorise_RGB_tuples(RGB_tup, prot_expressions_rescaled)
@@ -578,8 +579,12 @@ class Organism:
                """)
         self.CDS_annot_matrix(self.annot_lst)
         self.protein_CDS_index(self.CDS_matrix)
-        self.protein_peptide_index(self.input_table)
-        self.peptide_protein_index(self.input_table)
+        
+        try:
+            self.protein_peptide_index(self.input_table)
+            self.peptide_protein_index(self.input_table)
+        except:
+            print('Proteomics data not found')
         self.protein_PSM_int_index()
 
 
@@ -822,8 +827,8 @@ class Organism:
                 chromStart=CDS_block[0][0]              # Chromosome Start is in the first position of the first record
                 chromEnd=CDS_block[-1][1]               # Chromosome End is in the second position of the last record
             else:
-                chromStart=CDS_block[0][1]              # In the negative case the bonduaries coordinates 
-                chromEnd=CDS_block[-1][0]               # inverted their orders in the respective records
+                chromStart=CDS_block[-1][1]              # In the negative case the bonduaries coordinates 
+                chromEnd=CDS_block[0][0]               # inverted their orders in the respective records
 
             print(self.prot_CDS_index[protein])
             print(f'{chromStart} - {chromEnd}')
@@ -1059,6 +1064,7 @@ class Organism:
             peptide_to_protein=self.pep_prot_index[peptide_sequence] # Fetch the set of proteins where the peptide has been found.
 
             # ---------- COORDINATES COMPARISON ---------- #  
+        
             for protein in peptide_to_protein: # Iterate the set of protein 
                 
                 CDS_block=allowed_genomic_space[protein] # Fetch the genomic coordinates of the CDS of the protein where the peptide has been found.
@@ -1066,11 +1072,17 @@ class Organism:
                     CDS_coord_1=CDS[0]
                     CDS_coord_2=CDS[1]
                     if peptide_strand=='+':
-                        if (peptide_coord_1>=CDS_coord_1) and (peptide_coord_2<=CDS_coord_2): # VALID genomic coordinates
-                            pass
-                        else:                                                                 # INVALID genomic coordinates
-                            PoGo_peptides=np.delete(PoGo_peptides,pep_row_index,0)     # REMOVE THE PEPTIDE FROM THE PoGo PEPTIDE TABLE
-            
+                        # if (peptide_coord_1>=CDS_coord_1) and (peptide_coord_2<=CDS_coord_2): # VALID genomic coordinates
+                        #     pass
+                        # else:                                                                 # INVALID genomic coordinates
+                        #     PoGo_peptides=np.delete(PoGo_peptides,pep_row_index,0)     # REMOVE THE PEPTIDE FROM THE PoGo PEPTIDE TABLE
+
+                        if (peptide_coord_1<CDS_coord_1) and (peptide_coord_2>CDS_coord_2): # INVALID genomic coordinates
+                            try:
+                                #PoGo_peptides=np.delete(PoGo_peptides,pep_row_index,0)     # REMOVE THE PEPTIDE FROM THE PoGo PEPTIDE TABLE
+                                PoGo_peptides[pep_row_index,0]=''
+                            except:
+                                print('Invalid row index -----> ',PoGo_peptides.shape,'-',pep_row_index)
         #print('PoGo_peptides')
         #print(PoGo_peptides)
 
@@ -1490,18 +1502,33 @@ class Organism:
         out_file_hand = open(out_file_name, 'w')
         if type(input_array)==list and type(input_array[0])==list: # In this case is a list of lists
             number_of_columns=len(input_array[0])
-        else: number_of_columns=1                                 # In this case is a simple list
+            for row in input_array:
+                out_row =''
+                for col_ind, col_data in enumerate(row):
+                    out_row += col_data
+                    if (col_ind < number_of_columns): out_row += sep
+                out_row += '\n'
+                out_file_hand.write(out_row)
+            print('1')
         
-        if 'numpy.ndarray' in str(type(input_array)): number_of_columns = input_array.shape[1]
+        if type(input_array)==list and type(input_array[0])==str:
+            number_of_columns=1                                 # In this case is a simple list
+            for row in input_array:
+                out_file_hand.write(row+'\n')
+            print('2')
+        
+        if 'numpy.ndarray' in str(type(input_array)): 
+            number_of_columns = input_array.shape[1]
+            for row in input_array:
+                out_row =''
+                for col_ind, col_data in enumerate(row):
+                    out_row += col_data
+                    if (col_ind < number_of_columns): out_row += sep
+                out_row += '\n'
+                out_file_hand.write(out_row)
+            print('3')
 
-        for row in input_array:
-            out_row =''
-            for col_ind, col_data in enumerate(row):
-                out_row += col_data
-                if (col_ind < number_of_columns): out_row += sep#'\t'
-            out_row += '\n'
-            
-            out_file_hand.write(out_row)
+
         out_file_hand.close()
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
 #                                              M - A - I - N                                           #
