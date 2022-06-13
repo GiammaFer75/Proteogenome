@@ -450,12 +450,19 @@ class Organism:
         OUTPUT:
         """
         import math 
+        import matplotlib.pyplot as plt
 
         def generate_color_gradient(color_lst, reverse_gradient=False):
             """
             Version: 1.0
 
             Name History: generate_color_gradient
+
+            This function generates a list of tuples of RGB codes converted as three floating numbers.
+            For each color in the input color_lst will be generated a colour fader block that goes from the previous colour
+            in the list toward the next.
+            All these colour fader blocks will be combined all together.
+            The output is a list of RGB codes that represent each colour point in the color_lst evenly faded. 
             
             ** MAIN FUNCTION ** ---> protein_PSM_int_index
 
@@ -477,6 +484,7 @@ class Organism:
                 INPUT :
                 OUTPUT:
                 """
+
                 c1=np.array(colors.to_rgb(c1))
                 c2=np.array(colors.to_rgb(c2))
                 return colors.to_rgb((1-mix)*c1 + mix*c2)
@@ -488,37 +496,66 @@ class Organism:
                     col.append(colorFader(color1,color2,data_point/n))
                 return col
 
-            n=80
+            n=40
             color_blocks_lst = []
-            for ind, color in enumerate(color_lst):
+            for ind, color in enumerate(color_lst):    # For each color in the C list generate a gradient 
                 color_blocks_lst.append([color, color_lst[ind+1]])
                 if ind == (len(color_lst)-2): break
             gradient =[]
             for block in color_blocks_lst:
-                gradient += rgb_block(block[0],block[1],n)
+                gradient += rgb_block(block[0],block[1],n) # Combine together all the color fader gradient for each color in the color_tuples
             if reverse_gradient: gradient.reverse()
+
             return gradient
 
         def exprlev_resc_RGB(values,RGB_scale):
             """
-            This function find the RGB code that 
+            This function find the RGB codes for each intensity value in the range of intensities from the lower
+            to the higher 
             """
-            old_max = min(values)
-            old_min = max(values)
+            old_max = max(values)
+            old_min = min(values)
             new_max = len(RGB_scale)
             new_min = 0
 
             rescaled_values = []
 
+            max_int_vec=[0]
+            #max_int_vec.append(values[0])
+
+            int_scaled=[]
+            insert_ind=0
+            
             for old_value in values:
-                try:
-                    NewValue = int((((old_value - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min)
-                except:
-                    print('{} - {} - {}'.format(old_max, old_min, new_min))
-                    a=input()
+                #print(old_value)
+                #print(max_int_vec)
+                NewValue = int((((old_value - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min)
+
+                grather=False 
+                for ind, val in enumerate(max_int_vec):
+                    if old_value > val:
+                        insert_ind=ind
+                        grather=True
+                        break
+                        
+                if not grather: 
+                    max_int_vec.append(old_value)
+                    int_scaled.append(NewValue)
+                else:
+                    max_int_vec.insert(insert_ind,old_value)
+                    int_scaled.insert(insert_ind,NewValue)
+                #print(max_int_vec)
+                #print(int_scaled)
+                #a=input()
+            
                 rescaled_values.append(NewValue)
+            
+            for i in range(0,len(max_int_vec[:-1])-1):
+                print(f'{max_int_vec[i]} - {int_scaled[i]}')
 
             return rescaled_values
+            
+
 
         def vectorise_RGB_tuples(RGB_tuples, prot_exp_resc):
             
@@ -554,8 +591,22 @@ class Organism:
         print(f'{len(self.prot_pep_index)} - {len(self.prot_CDS_index)}')
         RGB_tup = generate_color_gradient(color_lst=['blue','green','yellow','red'],
                                              reverse_gradient=False)#'gray',
+        #print(RGB_tup)
+        
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.yaxis.set_visible(False)
+        
+        # x_tick_locations=range(0,max_intensity-min_intensity,10)
+        # x_tick_labels=range(min_intensity,max_intensity,1000)
+        # plt.xticks(x_tick_locations, x_tick_labels)
+        
+        for x, colorRGB in enumerate(RGB_tup):
+            ax.axvline(x, color=colorRGB, linewidth=4)
+
+        plt.show() 
+
         prot_expressions_rescaled = exprlev_resc_RGB(intensities,RGB_tup)
-        #print(len(prot_expressions_rescaled))
+        print(prot_expressions_rescaled)
         prot_expressions_RGB=vectorise_RGB_tuples(RGB_tup, prot_expressions_rescaled)
 
         print(f'{len(prot_expressions_RGB)} - {len(self.prot_CDS_index)}')
@@ -834,12 +885,14 @@ class Organism:
             print(f'{chromStart} - {chromEnd}')
             
 
-            Score='1'
+            #Score='1'
             tickStart = chromStart
             tickEnd = chromEnd
             blockCount = str(len(CDS_block))
 
             itemRGB = self.prot_PSMint_index[protein][2]  # Fetch the protein intensity into the proper index
+            Score=str(self.prot_PSMint_index[protein][1]) # Set the Score column in the bed protein file
+                                                          # to the total intensity of the current protein.
 
             blockSizes_str = ''
             blockStarts_str = ''
@@ -1119,171 +1172,90 @@ class Organism:
         return peptides
 
 
-    # def dummy_peptides_index(self, prot_sequences_FASTA_fn='', pep_min_length=4, pep_max_length=30):
+
+    # def dummy_input(self, peptides='', out_file_name='', dummy_exp_name = 'exp1',
+    #                 prot_sequences_FASTA_fn='', pep_min_length=4, pep_max_length=30,
+    #                 PSMs_range=1, pep_int_range=[100,10000]):
     #     """
     #     Version: 1.0
 
-    #     Name History: generate_peptides - dummy_peptides_index
+    #     Name History: dummy_PoGo_peptides - dummy_input   
 
-    #     This function performs the synthetic trypsinisation of a protein sequence FASTA file.
-    #     The output is a dictionary with the protein ID as key and the protein sequence as value.
+    #     This function generates a file .txt that contains dummy peptides in a format suitable for PoGo software.
 
-    #     INPUT : prot_sequences_FASTA_fn   Str   File name of protein FASTA sequence file.
-    #             pep_max_length  Int       Max lenght of the generated peptides.
-    #             pep_min_length  Int       Min lenght of the generated peptides.
-    #     OUTPUT: peptides        Dict      Key: [Str]    Protein ID.
-    #                                       Val: [Str]    Protein sequence.       
+    #     INPUT : peptides            List[Str]       List of peptide sequence.
+    #             out_file_name       Str             Name of the file that will contains the dummy peptides.
+    #             dummy_exp_name      Str             Dummy experiment name.
+    #     OUTPUT: dummy_input_matrix  np.array[Str]   The matrix with the dummy peptides.
     #     """
+        
+    #     import copy
 
-    #     #prot_ID_pat = re.compile(r'.*?protein=.*?\s(.*?)\sprotein_id=') # Pattern for protein ID
-    #     prot_ID_pat = re.compile(r'.*?gene=.*?(.*?)\slocus_tag=') # Pattern for protein ID
+    #     prot_ID_pat = re.compile(r'.*?gene=.*?(.*?)\slocus_tag=|.*?gene:(.*?)\s') # Pattern for protein ID
 
     #     #FASTA_in_lst = self.file_to_lst(prot_sequences_FASTA_fn) # Upload the FASTA file with protein sequences in a list 
-    #     FASTA_in_lst = self.FASTA_cpt_seq(self.FASTA_lst)         # Compact possible multilines sequences       
+    #     #FASTA_in_lst = self.FASTA_cpt_seq(self.FASTA_lst)         # Compact possible multilines sequences       
 
-    #     self.dummy_input_matrix = np.array([[]])
+    #     FASTA_in_lst= copy.deepcopy(self.FASTA_lst)
+
+    #     dummy_input_matrix = np.array([['','','','','']], dtype=object)
     #     table_row=[]
     #     current_protein=True # This boolean signals if the data belong to the current protein. 
     #                          # This is used for combine the protein ID from the FASTA header with his sequence.
 
     #     for ind,prot_sequence in enumerate(FASTA_in_lst): # Iterate over the list that contains the FASTA file rows.
-    #         if prot_sequence[0] == '>':# This condition is for the FASTA headers.
-    #             # print(f'search header in row {ind}')
-    #             # try:
+    #         #if ind>4: break # ################REMOVE THIS ROW IN THE FINAL VERSION################
+            
+    #         if prot_sequence[0] == '>':# If this row is a FASTA headers.
+    #             # print(prot_sequence)
+    #             # a=input()
     #             protein_ID=prot_ID_pat.match(prot_sequence).group(1) # Extract the PROTEIN ID
-    #             #     print(protein_ID)
-    #             # except:
-    #             #     print('protein ID NOT FOUND --------------------')
-    #             #     print(prot_sequence)
-    #             #     a=input()
-    #             current_protein=True     # Signals that the next rows belongs to this protein.
+    #             current_protein=True       # Signals that the next rows belongs to this protein.
+            
     #         else:                   # Generate the group of PEPTIDES that belong to the current protein.
     #             current_prot_pep=self.dummy_peptides(prot_sequence,pep_min_length, pep_max_length) 
-    #             #print(f'the list of peptides for {protein_ID} is {current_prot_pep}')
-    #             current_protein=False    # Signals that the next row will belong to a new protein.
+    #             current_protein=False      # Signals that the next row will belong to a new protein.
 
     #         if not current_protein:
-    #             # print(ind)
-    #             # print(protein_ID)
-    #             current_prot_pep.insert(0,protein_ID) # Put the protein ID before the peptide sequencies forming a new table row.
-    #             # print(f'the complete row is {current_prot_pep}')
-    #             # print(type(current_prot_pep))
-    #             current_prot_pep=np.array(current_prot_pep,dtype=object) # Convert the list in a np.array.
-
-    #             # Check if the array to concatenate has the same bumber of columns of the peptide matrix
-    #             # pep_mat_rows=np.shape(self.dummy_input_matrix)[0] 
-    #             pep_mat_cols=np.shape(self.dummy_input_matrix)[1]    # Number of columns in the protein matrix
-    #             current_prot_pep_cols=np.shape(current_prot_pep)[1]  # Number of columns in the current Protein
-    #             col_dif=pep_mat_cols-current_prot_pep_cols 
-
-    #             if col_dif<0: # The number of peptides for this protein is greater than the number of peptides that belong to each of the proteins registered in the table so far
-
-
-    #                 self.dummy_input_matrix=np.concatenate((self.dummy_input_matrix, [current_prot_pep]))
-    #   # #         print(prot_sequence)
-    #   #           prot_sequence = prot_sequence.replace('\n','')
-    #   #           prot_sequence = prot_sequence.replace('K','|')  # LYSINE
-    #   #           prot_sequence = prot_sequence.replace('R','|')  # ARGININE      
-    #   #   #         print(prot_sequence)
-                
-    #   #           new_peptides = prot_sequence.split('|') # The protein sequence is now a list of peptides
-    #   #   #         print(new_peptides)
-                
-    #   #           append_peptides = []
-    #   #           for pep in new_peptides:
-    #   #               if (len(pep) >= pep_min_length) & (len(pep) <= pep_max_length): # Filter the peptides with the lenght criteria
-    #   #                   append_peptides.append(pep)
-    #   #   #         print(append_peptides)    
-                
-    #   #           if len(append_peptides) > 0:
-    #   #               peptides += append_peptides            
-            
-    # #         a=input()
-
-
-    def dummy_input(self, peptides='', out_file_name='', dummy_exp_name = 'exp1',
-                    prot_sequences_FASTA_fn='', pep_min_length=4, pep_max_length=30,
-                    PSMs_range=1, pep_int_range=[100,10000]):
-        """
-        Version: 1.0
-
-        Name History: dummy_PoGo_peptides - dummy_input   
-
-        This function generates a file .txt that contains dummy peptides in a format suitable for PoGo software.
-
-        INPUT : peptides            List[Str]       List of peptide sequence.
-                out_file_name       Str             Name of the file that will contains the dummy peptides.
-                dummy_exp_name      Str             Dummy experiment name.
-        OUTPUT: dummy_input_matrix  np.array[Str]   The matrix with the dummy peptides.
-        """
-        
-        import copy
-
-        prot_ID_pat = re.compile(r'.*?gene=.*?(.*?)\slocus_tag=|.*?gene:(.*?)\s') # Pattern for protein ID
-
-        #FASTA_in_lst = self.file_to_lst(prot_sequences_FASTA_fn) # Upload the FASTA file with protein sequences in a list 
-        #FASTA_in_lst = self.FASTA_cpt_seq(self.FASTA_lst)         # Compact possible multilines sequences       
-
-        FASTA_in_lst= copy.deepcopy(self.FASTA_lst)
-
-        dummy_input_matrix = np.array([['','','','','']], dtype=object)
-        table_row=[]
-        current_protein=True # This boolean signals if the data belong to the current protein. 
-                             # This is used for combine the protein ID from the FASTA header with his sequence.
-
-        for ind,prot_sequence in enumerate(FASTA_in_lst): # Iterate over the list that contains the FASTA file rows.
-            #if ind>4: break # ################REMOVE THIS ROW IN THE FINAL VERSION################
-            
-            if prot_sequence[0] == '>':# If this row is a FASTA headers.
-                # print(prot_sequence)
-                # a=input()
-                protein_ID=prot_ID_pat.match(prot_sequence).group(1) # Extract the PROTEIN ID
-                current_protein=True       # Signals that the next rows belongs to this protein.
-            
-            else:                   # Generate the group of PEPTIDES that belong to the current protein.
-                current_prot_pep=self.dummy_peptides(prot_sequence,pep_min_length, pep_max_length) 
-                current_protein=False      # Signals that the next row will belong to a new protein.
-
-            if not current_protein:
-                for new_peptide in current_prot_pep: # Iterate over the peptides generated from the current protein sequence.
+    #             for new_peptide in current_prot_pep: # Iterate over the peptides generated from the current protein sequence.
                     
-                    current_prot_pep=np.array([protein_ID,new_peptide],dtype=object) # Convert the list in a np.array.
+    #                 current_prot_pep=np.array([protein_ID,new_peptide],dtype=object) # Convert the list in a np.array.
                     
 
-                # ***** RANDOM PSMs ***** #
-                    if type(PSMs_range)==list:  
-                                          # lower | upper
-                                          # bound | bound
-                        rand_PSM=randrange(PSMs[0],PSMs[1]) # Generate random PSMs
-                    else:
-                        rand_PSM=1
-                    rand_PSM=np.array(['',rand_PSM])
-                    #current_prot_pep=np.append(current_prot_pep,[rand_PSM],axis=0)
-                    current_prot_pep=np.append(current_prot_pep,rand_PSM,axis=0)
+    #             # ***** RANDOM PSMs ***** #
+    #                 if type(PSMs_range)==list:  
+    #                                       # lower | upper
+    #                                       # bound | bound
+    #                     rand_PSM=randrange(PSMs[0],PSMs[1]) # Generate random PSMs
+    #                 else:
+    #                     rand_PSM=1
+    #                 rand_PSM=np.array(['',rand_PSM])
+    #                 #current_prot_pep=np.append(current_prot_pep,[rand_PSM],axis=0)
+    #                 current_prot_pep=np.append(current_prot_pep,rand_PSM,axis=0)
 
-                # ***** RANDOM INTENSITY ***** #
-                    rand_intensity=np.array(randrange(pep_int_range[0],pep_int_range[1]))
-                    current_prot_pep=np.append(current_prot_pep,[rand_intensity],axis=0)
-                    dummy_input_matrix=np.concatenate((dummy_input_matrix, [current_prot_pep]))
+    #             # ***** RANDOM INTENSITY ***** #
+    #                 rand_intensity=np.array(randrange(pep_int_range[0],pep_int_range[1]))
+    #                 current_prot_pep=np.append(current_prot_pep,[rand_intensity],axis=0)
+    #                 dummy_input_matrix=np.concatenate((dummy_input_matrix, [current_prot_pep]))
         
-        dummy_input_matrix=np.delete(dummy_input_matrix,0,0) # Remove the first initialisation row
+    #     dummy_input_matrix=np.delete(dummy_input_matrix,0,0) # Remove the first initialisation row
         
 
-        #************* Output File creation
-        if out_file_name !='':
+    #     #************* Output File creation
+    #     if out_file_name !='':
             
-            fh = open(out_file_name, 'w')
-            for ind, row in enumerate(dummy_input_matrix):
-                write_row = ''
-        #         print(pep)
-                write_row += dummy_exp_name + '\t' + row[1] + '\t' + str(row[2]) + '\t' + str(row[3]) + '\n'
-                # write_row += dummy_exp_name + '\t' + pep + '\t' + str(PSM[ind]) + '\t' + str(inten[ind]) + '\n'
-        #         print(row)
-                fh.write(write_row)
-        #         a=input()
-            fh.close()
+    #         fh = open(out_file_name, 'w')
+    #         for ind, row in enumerate(dummy_input_matrix):
+    #             write_row = ''
+    #     #         print(pep)
+    #             write_row += dummy_exp_name + '\t' + row[1] + '\t' + str(row[2]) + '\t' + str(row[3]) + '\n'
+    #             # write_row += dummy_exp_name + '\t' + pep + '\t' + str(PSM[ind]) + '\t' + str(inten[ind]) + '\n'
+    #     #         print(row)
+    #             fh.write(write_row)
+    #     #         a=input()
+    #         fh.close()
 
-        return dummy_input_matrix
+    #     return dummy_input_matrix
     
     def prot_not_represented(self, CDS_ind, pep_ind):
         """
@@ -1313,21 +1285,30 @@ class Organism:
         return CDS_ind
 
 
-    def dummy_input_nparrays(self, peptides='', pep_table_fn='dummy_peptide_table.txt', 
-                             ID_search_pattern='.*?gene=(.*?)\s',
-                             dummy_exp_name = 'exp1', pep_min_length=4, pep_max_length=30,
-                             PSMs_range=1, pep_int_range=[100,10000],
-                             pept_percentage=0, PTM_percentage=0):
+    def generate_dummy_peptides(self, pep_table_fn='dummy_peptide_table.txt', 
+                                ID_search_pattern='.*?gene=(.*?)\s',
+                                dummy_exp_name = 'exp1', pep_min_length=4, pep_max_length=30,
+                                PSMs_range=1, pep_int_range=[100,10000],
+                                pept_percentage=0, PTM_percentage=0):
         """
         Version: 2.0
 
-        Name History: dummy_PoGo_peptides - dummy_input - dummy_input_nparrays  
+        Name History: dummy_PoGo_peptides - dummy_input - dummy_input_nparrays - generate_dummy_peptides   
 
         This function generates a file .txt that contains dummy peptides in a format suitable for PoGo software.
+        In order to create this peptides the function needs the protein sequences and annotations from a reference 
+        organism in FASTA and GFF3 format respectively
+        
 
-        INPUT : peptides        List[Str]   List of peptide sequence.
-                out_file_name   Str         Name of the file that will contains the dummy peptides.
-                dummy_exp_name  Str         Dummy experiment name.
+        INPUT : pep_table_fn        [Str]   The file name where will be saved the dummy proteomics data.
+                ID_search_pattern   [Str]   The pattern in regex format that match the protein IDs in the FASTA file.
+                dummy_exp_name      [Str]   Dummy experiment name related to the simulated proteomics data.
+                pep_min_length      [Int]   The minimum length allowed in the random generation of the peptides.
+                pep_max_length      [Int]   The maximum length allowed in the random generation of the peptides.
+                PSMs_range=1  by default  
+                pep_int_range       [List]  Upper and lower bound respectively of the random range used to generate peptide intensities.
+                pept_percentage     [Int]   How many peptides must be considerd over the total number of dummy peptides generated.
+                PTM_percentage      [Int]   From the peptides in the pept_percentage, how many of them will report a random PTM. 
         OUTPUT:
         """
         PTMs_types = ['phosphorylation', 'acetylation', 'acetylation', 'amidation', 'oxidation', 'methylation',                 
@@ -1445,25 +1426,8 @@ class Organism:
                 self.dummy_input_matrix[pep_ind,2]=PTM                    # write the PTM encoding in the peptide row
 
         self.make_sep_file(pep_table_fn, self.dummy_input_matrix, sep='\t')
-        # pep_inten_col=np.random.randint(pep_int_range[0],pep_int_range[1],
-        #                            np.shape(self.dummy_input_matrix)[0])
-
-        # self.dummy_input_matrix=np.concatenate((self.dummy_input_matrix, pep_inten_col), axis=1)
-
-#********************** File creation
-    #     PSM   = np.ones(len(peptides,), dtype=int)
-    #     inten = np.random.randint(1000, 10000, len(peptides), dtype=int)
-        
-    #     fh = open(out_file_name, 'w')
-    #     for ind, pep in enumerate(peptides):
-    #         row = ''
-    # #         print(pep)
-    #         row += dummy_exp_name + '\t' + pep + '\t' + str(PSM[ind]) + '\t' + str(inten[ind]) + '\n'
-    # #         print(row)
-    #         fh.write(row)
-    # #         a=input()
-    #     fh.close()
     
+
 
     def Proteogenome_Demo(self, prot_quantity=10, pep_length_range=[], 
                           pep_int_range=[50,5000], PTM_ptg=0):
