@@ -15,7 +15,6 @@
 - [PoGo Input Files](#pgif)
 - [Tags for The Genomic Linkage](#mpptmpgtgl)
 - [Run PoGo](#mpwprp)
-- [PoGo Output Overview](#pgoo)
 
 [Proteogenome Usage](#pu) </br>
 - [Proteogenome Input Files](#pif)
@@ -76,12 +75,18 @@ The box **Protein Annotation GTF** refers to the annotations provided to the PoG
 
 <a name="hpwpm"/></a></br>
 **Protein Map Overview** </br>
-For the protein map the software will consider the protein codes provided by the MS analysis. These codes must be UniProt accession codes. Once collected these codes, Proteogenome will refer to the protein genomic annotations (in GFF3 format) to fetch the genomic coordinates. In particular, it will consider the genomic coordinates of all the the DNA coding sequences that make up each protein (only the CDS annotations).The final map will be a .bed track suitable for the IGV genome browser. The .bed format store the RGB code in the column 9. Proteogenome will consider the protein expression level in order to assign an RGB code according to a color gradient. The protein expression level will be obtained adding the intensity of all the peptides that belong to the specific protein.
 
 ![](Images/Protein_20_10_MAP.JPG)
 
+For the protein map the software will consider the protein codes provided by the MS analysis. These codes must be UniProt accession codes. Once collected these codes, Proteogenome will refer to the protein genomic annotations (in GFF3 format) to fetch the genomic coordinates. In particular, it will consider the genomic coordinates of all the the DNA coding sequences that make up each protein (only the CDS annotations).The final map will be a .bed track suitable for the IGV genome browser. The .bed format store the RGB code in the column 9. Proteogenome will consider the protein expression level in order to assign an RGB code according to a color gradient. The protein expression level will be obtained adding the intensity of all the peptides that belong to the specific protein.
+
+
+
 <a name="hpwpepm"/></a></br>
 **Peptide Map Overview** </br>
+
+![](Images/Peptide_20_10_MAP.JPG)
+
 Peptides are protein fragments of different sizes. For this reason, it is not possible to refer only to the protein genomic annotations in order to fetch the peptide genomic coordinates. There are two reasons why annotations cannot be used to map the peptide directly:
 
 - Firstly, if we consider an annotated genome, we can find different types of annotations. As described for the protein map, Proteogenome will only refer to CDS (coding regions). However, peptides are just protein fragments. Due to the genetic code, each position in the protein sequence will be represented by a three nucleotide codon in the DNA. Therefore, the genomic coordinates provided in the CDS annotations cannot be used as they are to represent a single peptide. 
@@ -94,8 +99,6 @@ These two aspects suggest that the peptide map is based on two main steps:
 
 To accomplish this task we have choose the [PoGo](https://github.com/cschlaffner/PoGo) software.  
 
-![](Images/Peptide_20_10_MAP.JPG)
-
 
 
 <a name="hpwptmm"/></a></br>
@@ -104,9 +107,11 @@ PoGo can map also the PTMs that eventually occur on a peptide sequence. However,
 
 ![](Images/PTM_colour_code.JPG) 
 
-PTM colour code table from https://github.com/cschlaffner/PoGo
+PTM color code table from https://github.com/cschlaffner/PoGo
 
 ![](Images/PTM_20_10_MAP.JPG)
+
+In the screenshot above, the peptides with PTM are reported in the PTM track with the PTM encoding embedded in their sequences.
 
 <a name="hpwags"/></a></br>
 **The Allowed Genomic Space** </br>
@@ -332,8 +337,8 @@ HCMV.filter_peptides(PoGo_PTM_map, home+'PTM_MAP.bed')
 
 ---------------------------------------------------------------------------------------------------
 
-<a name="wtsd"/></a></br>
-## ***Visulise the Map*** 
+<a name="vtm"/></a></br>
+## ***Visualise the Maps*** 
 #### 1. Upload the reference genome
 This track is the genome of the species from which the proteomics data come from. In order to add the reference genome select **Genomes** - **Load Genome from File** and select your FASTA file for the reference genome.
 If you are using the data provided by this repository then load the file ***HCMV_CompleteRecord.fasta***
