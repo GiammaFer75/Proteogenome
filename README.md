@@ -162,7 +162,7 @@ Proteogenome can read proteomic data provided in CSV or TSV file. The table must
 - **Peptide Sequence** - Amino Acids
 
 - **Peptide Modification** - The type and the position of the PTM inside the peptide.
-    For instance, consider the line of the first peptide **ACGLGLNL** in the example table below. This peptide has been identified as part of the protein **UL86**. The **acetylation (A0)** notation means that the PTM occurs on the Alanine at position 1 in this specific peptide. 
+    For instance, consider the line of the first peptide **ACGLGLNL** in the example table below. This peptide has been identified as part of the protein **UL86**. The **acetylation (A0)** notation means that the PTM occurs on the Alanine at position 0 in this specific peptide. 
 
 - **Peptide PSMs** - Number of peptide-spectrum matches (PSMs) for the given peptide, if available from the MS/MS analysis.
 
