@@ -32,6 +32,7 @@
 [Appendix](#appendix) </br>
 - [FASTA Format Management](#FASTA)
 - [GTF Format Management](#GTF)
+- [Generate Dummy Peptides](#GDP)
   
 <a name="i"/></a></br>
 ### ***Introduction***
@@ -356,6 +357,92 @@ Use the same menu options ***File*** - ***Load from File***
 Use the same menu option ***File*** - ***Load from File***
 
 ---------------------------------------------------------------------------------------------------
+
+<a name="SIM"/></a></br>
+### SIMULATION 
+
+The Proteogenome simulation is run with data included in this repository. The reference organism for this simulation is the [HCMV strain Merlin](https://www.ncbi.nlm.nih.gov/nuccore/155573622). The code shown below is to run the full sequence of steps. However, it will not be possible to copy and execute all these commands in a single run. Indeed, as explained in the section [Proteogenome Usage](#pu), the process that goes from proteomics data towards the visualisation tracks must include the usage of PoGo (and AGAT in this particular case). For this reason, in the code below are shown the points at which must be run additional software. In particular, the step of AGAT conversion can be skipped due to the fact that the conversion from GFF3 to GTF has beed already performed and the HCMV annotations converted are located in **\~/Data/PoGo_Input_Files/HCMV_Protein_Annotations.gtf**.
+
+```sh
+import os
+home=os.getcwd()+'/Data/'
+
+import Proteogenome_2 as Pg
+
+# ********** CREATE AN Organism INSTANCE ********** #
+HCMV=Pg.Organism(FASTA_filename=home+'HCMV_CodingSeq.fasta',
+                 annot_filename=home+'HCMV_Protein_Annotations.gff3',
+                 input_table_filename=home+'peptide_table.txt')
+
+# ********** INITIALISE THE INDEXES ********** #
+HCMV.initialise_indexes()
+
+# ********** CREATE THE PROTEIN MAP TRACK ********** #
+HCMV.protein_track(bed_fn=home+'Protein_MAP.bed')
+
+# ********** CREATE THE PEPTIDES INPUT TABLE SUITABLE FOR PoGo ********** #
+HCMV.PoGo_input_table(out_file_name=home+'PoGo_Input_Table.txt')
+
+# ***************************************** #
+# ********** MANAGE FASTA FORMAT ********** #
+# ***************************************** #
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+HCMV.FASTA_lst=HCMV.rectify_rows(HCMV.FASTA_lst,target_sub_str=[('lcl|NC_006273.2_prot_',''),
+                                                                ('[',''),
+                                                                (']','')]
+                                )
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+HCMV.FASTA_lst=HCMV.locus_tag_substitution(HCMV.FASTA_lst)
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+HCMV.FASTA_lst=HCMV.rectify_rows(HCMV.FASTA_lst, target_patterns=[('gene=.*?\s','')])
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+HCMV.FASTA_lst=HCMV.FASTA_cpt_seq(HCMV.FASTA_lst)
+HCMV.print_lst(HCMV.FASTA_lst, limit=6)
+```
+
+```sh
+# ///////////////// RUN AGAT \\\\\\\\\\\\\\\\\\\ #
+# At this point the user must convert the annotations from the GFF3 format to the GTF using AGAT
+# Annotations have been already converted and stored in PoGo_Input_Files/HCMV_Protein_Annotations.gtf
+
+# ***************************************** #
+# ********** MANAGE  GTF  FORMAT ********** #
+# ***************************************** #
+
+HCMV.annot_lst=HCMV.file_to_lst(home+'PoGo_Input_Files/HCMV_Protein_Annotations.gtf')
+HCMV.print_lst(HCMV.annot_lst, limit=7)
+HCMV.annot_lst=HCMV.rectify_rows(HCMV.annot_lst, target_sub_str=[('gene-',''), ('rna-','')])
+HCMV.annot_lst=HCMV.rectify_rows(HCMV.annot_lst, open_patterns=[('.*?gene_id\s\"(.*?)\"','.*?locus_tag\s\"(.*?)\"')])
+```
+
+```sh
+# ********** SAVE THE PROPERLY FORMATTED TABLES IN SEPARATED FILES ********** #
+HCMV.make_sep_file(home+'PoGo_prot_seq.fasta', HCMV.FASTA_lst, sep=' ')
+HCMV.make_sep_file(home+'PoGo_annot.gtf', HCMV.annot_lst, sep=' ')
+
+# ****************** GENERATE THE PoGo INPUT TABLE ****************** #
+HCMV.PoGo_input_table(out_file_name=home+'PoGo_Input_Table.txt')
+```
+
+```sh
+# ///////////////// RUN POGO \\\\\\\\\\\\\\\\\\\ #
+# PoGo will generate all his output files in the '~/Data' folder.
+# The PoGo output files will have names that combine the input file name 'PoGo_Input_Table' and suffix 
+# or file extension in accordance with the file contetnts
+```
+
+```sh
+# ++++++++++++++++++ PEPTIDE MAP ++++++++++++++++++ #
+PoGo_peptide_map=HCMV.load_generic_table(home+'PoGo_Input_Table.bed')
+HCMV.filter_peptides(PoGo_peptide_map, home+'Peptide_MAP.bed')
+
+# ^^^^^^^^^^^^^^^^^^ PTM MAP ^^^^^^^^^^^^^^^^^^ #
+PoGo_PTM_map=HCMV.load_generic_table(home+'PoGo_Input_Table_ptm.bed')
+HCMV.filter_peptides(PoGo_PTM_map, home+'PTM_MAP.bed')
+```
+
+---------------------------------------------------------------------------------------------------
+
 <a name="r"/></a></br>
 ## ***References***
 
@@ -521,86 +608,28 @@ HCMV.make_sep_file(home+'PoGo_prot_seq.fasta', HCMV.FASTA_lst, sep=' ')
 HCMV.make_sep_file(home+'PoGo_annot.gtf', HCMV.annot_lst, sep=' ')
 ```
 
-<a name="SIM"/></a></br>
-### SIMULATION 
-
-The Proteogenome simulation is run with data included in this repository. The reference organism for this simulation is the [HCMV strain Merlin](https://www.ncbi.nlm.nih.gov/nuccore/155573622). The code shown below is to run the full sequence of steps. However, it will not be possible to copy and execute all these commands in a single run. Indeed, as explained in the section [Proteogenome Usage](#pu), the process that goes from proteomics data towards the visualisation tracks must include the usage of PoGo (and AGAT in this particular case). For this reason, in the code below are shown the points at which must be run additional software. In particular, the step of AGAT conversion can be skipped due to the fact that the conversion from GFF3 to GTF has beed already performed and the HCMV annotations converted are located in **\~/Data/PoGo_Input_Files/HCMV_Protein_Annotations.gtf**.
-
-```sh
-import os
-
-import Proteogenome_2 as Pg
-
-home=os.getcwd()+'/Data/'
-
-# ********** CREATE AN Organism INSTANCE ********** #
-HCMV=Pg.Organism(FASTA_filename=home+'HCMV_CodingSeq.fasta',
-                 annot_filename=home+'HCMV_Protein_Annotations.gff3',
-                 input_table_filename=home+'peptide_table.txt')
-
-# ********** INITIALISE THE INDEXES ********** #
-HCMV.initialise_indexes()
-
-# ********** CREATE THE PROTEIN MAP TRACK ********** #
-HCMV.protein_track(bed_fn=home+'Protein_MAP.bed')
-
-# ********** CREATE THE PEPTIDES INPUT TABLE SUITABLE FOR PoGo ********** #
-HCMV.PoGo_input_table(out_file_name=home+'PoGo_Input_Table.txt')
-
-# ***************************************** #
-# ********** MANAGE FASTA FORMAT ********** #
-# ***************************************** #
-HCMV.print_lst(HCMV.FASTA_lst, limit=6)
-HCMV.FASTA_lst=HCMV.rectify_rows(HCMV.FASTA_lst,target_sub_str=[('lcl|NC_006273.2_prot_',''),
-                                                                ('[',''),
-                                                                (']','')]
-                                )
-HCMV.print_lst(HCMV.FASTA_lst, limit=6)
-HCMV.FASTA_lst=HCMV.locus_tag_substitution(HCMV.FASTA_lst)
-HCMV.print_lst(HCMV.FASTA_lst, limit=6)
-HCMV.FASTA_lst=HCMV.rectify_rows(HCMV.FASTA_lst, target_patterns=[('gene=.*?\s','')])
-HCMV.print_lst(HCMV.FASTA_lst, limit=6)
-HCMV.FASTA_lst=HCMV.FASTA_cpt_seq(HCMV.FASTA_lst)
-HCMV.print_lst(HCMV.FASTA_lst, limit=6)
-```
+<a name="GDP"/></a></br>
+### Generate Dummy Peptides
+It is possible to run the Proteogenome simulation using dummy proteomics data, instead of real data or the proteomics data provided in the file *peptide_table.txt*. The function ***generate_dummy_peptides*** will create peptides starting from protein sequences and annotations. For this reason, the protein sequences must be uploaded in the instance before running the function. 
 
 ```sh
-# ///////////////// RUN AGAT \\\\\\\\\\\\\\\\\\\ #
-# At this point the user must convert the annotations from the GFF3 format to the GTF using AGAT
-# Annotations have been already converted and stored in PoGo_Input_Files/HCMV_Protein_Annotations.gtf
+# Initialise the instance with protein sequences and annotations
+HCMV=pg.Organism(FASTA_filename=home+'HCMV_CodingSeq.fasta',
+                 annot_filename=home+'HCMV_Protein_Annotations.gff3')
 
-# ***************************************** #
-# ********** MANAGE  GTF  FORMAT ********** #
-# ***************************************** #
 
-HCMV.annot_lst=HCMV.file_to_lst(home+'PoGo_Input_Files/HCMV_Protein_Annotations.gtf')
-HCMV.print_lst(HCMV.annot_lst, limit=7)
-HCMV.annot_lst=HCMV.rectify_rows(HCMV.annot_lst, target_sub_str=[('gene-',''), ('rna-','')])
-HCMV.annot_lst=HCMV.rectify_rows(HCMV.annot_lst, open_patterns=[('.*?gene_id\s\"(.*?)\"','.*?locus_tag\s\"(.*?)\"')])
+# Generate dummy peptides
+HCMV.generate_dummy_peptides(pep_table_fn=home+'new_peptide_table.txt' ,ID_search_pattern='.*?gene=(.*?)]\s',
+                             pept_percentage=10,PTM_percentage=10)
 ```
 
-```sh
-# ********** SAVE THE PROPERLY FORMATTED TABLES IN SEPARATED FILES ********** #
-HCMV.make_sep_file(home+'PoGo_prot_seq.fasta', HCMV.FASTA_lst, sep=' ')
-HCMV.make_sep_file(home+'PoGo_annot.gtf', HCMV.annot_lst, sep=' ')
+**ID_search_pattern** - must be provided to allow the identification of the protein IDs in the FASTA sequence headers. This parameter is a match pattern expressed as a python regular expression. 
 
-# ****************** GENERATE THE PoGo INPUT TABLE ****************** #
-HCMV.PoGo_input_table(out_file_name=home+'PoGo_Input_Table.txt')
-```
+**pept_percentage**   - is the percentage of peptides that will be created over the total number of peptides that can be 
+                    generated from the protein sequences provided.
 
-```sh
-# ///////////////// RUN POGO \\\\\\\\\\\\\\\\\\\ #
-# PoGo will generate all his output files in the '~/Data' folder.
-# The PoGo output files will have names that combine the input file name 'PoGo_Input_Table' and suffix 
-# or file extension in accordance with the file contetnts
-```
+**PTM_percentage**    - is the percentage of the peptides created that will present a PTM on their sequence. 
+                    The modification type will be randomised from the [default list](#hpwptmm).
 
-```sh
-# ++++++++++++++++++ PEPTIDE MAP ++++++++++++++++++ #
-PoGo_peptide_map=HCMV.load_generic_table(home+'PoGo_Input_Table.bed')
-HCMV.filter_peptides(PoGo_peptide_map, home+'Peptide_MAP.bed')
 
-# ^^^^^^^^^^^^^^^^^^ PTM MAP ^^^^^^^^^^^^^^^^^^ #
-PoGo_PTM_map=HCMV.load_generic_table(home+'PoGo_Input_Table_ptm.bed')
-HCMV.filter_peptides(PoGo_PTM_map, home+'PTM_MAP.bed')
-```
+
