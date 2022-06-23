@@ -27,9 +27,9 @@
 
 [SIMULATION](#SIM) </br>
 
-[References](#r) </br>
+[REFERENCES](#r) </br>
 
-[Appendix](#appendix) </br>
+[APPENDIX](#appendix) </br>
 - [FASTA Format Management](#FASTA)
 - [GTF Format Management](#GTF)
 - [Generate Dummy Peptides](#GDP)
@@ -103,7 +103,7 @@ To accomplish this task we have choose the [PoGo](https://github.com/cschlaffner
 
 
 <a name="hpwptmm"/></a></br>
-**PTM Map** </br>
+**PTM Map Overview** </br>
 PoGo can map also the PTMs that eventually occur on a peptide sequence. However, for the PTMs, it generates a separated .bed track where any type of post-transitional modification is highlighted with a colour code.   
 
 ![](Images/PTM_colour_code.JPG) 
@@ -355,11 +355,14 @@ For the gene annotations track for the reference genome, select ***File*** - ***
 If you are using the data provided by this repository then load the file ***HCMV_Protein_Annotations.gff3***
 ![](Images/IGV_LoadingAnnotations.png)
 
-#### 3. Upload the peptide map
-Use the same menu options ***File*** - ***Load from File***
+#### 3. Upload the PTM map
+Use the same menu options ***File*** - ***Load from File*** - select your PTM map
 
-#### 4. Upload the protein map
-Use the same menu option ***File*** - ***Load from File***
+#### 4. Upload the peptide map
+Use the same menu options ***File*** - ***Load from File*** - select your peptide map
+
+#### 5. Upload the protein map
+Use the same menu option ***File*** - ***Load from File*** - select your protein map
 
 ---------------------------------------------------------------------------------------------------
 
@@ -449,7 +452,7 @@ HCMV.filter_peptides(PoGo_PTM_map, home+'PTM_MAP.bed')
 ---------------------------------------------------------------------------------------------------
 
 <a name="r"/></a></br>
-## ***References***
+## ***REFERENCES***
 
 <a name="ref1"/></a></br>
 1. [Schlaffner, C., Pirklbauer, G.,  Bender, A. (2017). Fast, Quantitative and Variant Enabled Mapping of Peptides to Genomes. Cell Systems 5: 152–156](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5571441/)
@@ -457,7 +460,7 @@ HCMV.filter_peptides(PoGo_PTM_map, home+'PTM_MAP.bed')
 ---------------------------------------------------------------------------------------------------
 
 <a name="appendix"/></a></br>
-## ***Appendix***
+## ***APPENDIX***
 
 The purpose of this example is to present some formats issues that could affect the GTF and FASTA files and suggest how to manage them using Proteogenome.
 
@@ -615,7 +618,7 @@ HCMV.make_sep_file(home+'PoGo_annot.gtf', HCMV.annot_lst, sep=' ')
 
 <a name="GDP"/></a></br>
 ### Generate Dummy Peptides
-It is possible to run the Proteogenome simulation using dummy proteomics data, instead of real data or the proteomics data provided in the file *peptide_table.txt*. The function ***generate_dummy_peptides*** will create peptides starting from protein sequences and annotations. For this reason, the protein sequences must be uploaded in the instance before running the function. 
+It is possible to run the Proteogenome simulation using dummy proteomics data, instead of real data or the proteomics data provided in the file *peptide_table.txt*. The function ***generate_dummy_peptides*** will create peptides starting from protein sequences and annotations. For this reason, the protein sequences and their annotations must be uploaded in the instance before running the function. 
 
 ```sh
 # Initialise the instance with protein sequences and annotations
