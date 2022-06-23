@@ -248,13 +248,13 @@ In the section **Output Format** tick BED and PTM BED.
 
 <a name="pu"/></a></br>
 ## ***Proteogenome Usage***
+Proteogenome is a Python module developed with Python 3.8.5.
 Since Proteogenome does not need any installation, it is possible to download this repository on your local machine. Run Python from the console or from the notebook. However, it is necessary to move the current working directory on the Proteogenome folder in order to import the module and execute the command shown below. 
 
 <a name="init"/></a></br>
 ## ***Initialisation*** 
 
 #### 1. Import Proteogenome and Set the paths
-Proteogenome is a Python module developed with Python 3.8.5.
 Download this repository and extract the folder. Whether you run the program from the Python console or the Python terminal, make sure your working directory is the folder where Proteogenome was previously extracted.
 ```sh
 import os
