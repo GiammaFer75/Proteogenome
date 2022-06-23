@@ -161,7 +161,7 @@ Proteogenome can read proteomic data provided in CSV or TSV file. The table must
 - **Peptide Sequence** - Amino Acids
 
 - **Peptide Modification** - The type and the position of the PTM inside the peptide.
-    For instance, considering the line '3535' in the example table below. The Carbamidomethyl C(9) notation means that the PTM occours on the Cysteine at position 9 in this specific peptide. 
+    For instance, considering the line of the peptide **EMVLMEGLCSEQGR** in the example table below. The **Carbamidomethyl C(9)** notation means that the PTM occours on the Cysteine at position 9 in this specific peptide. 
 
 - **Peptide PSMs** - Number of peptide-spectrum matches (PSMs) for the given peptide, if available from the MS/MS analysis.
 
