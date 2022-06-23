@@ -254,10 +254,13 @@ Since Proteogenome does not need any installation, it is possible to download th
 ## ***Initialisation*** 
 
 #### 1. Import Proteogenome and Set the paths
+Proteogenome is a Python module developed with Python 3.8.5.
+Download this repository and extract the folder. Whether you run the program from the Python console or the Python terminal, make sure your working directory is the folder where Proteogenome was previously extracted.
 ```sh
-import Proteogenome as pg
+import os
+home=os.getcwd()+'/Data/'
 
-home='~/Data/'
+import Proteogenome_2 as Pg
 ```
 
 #### 2. Create an instance of type *Organism*
