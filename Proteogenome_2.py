@@ -511,90 +511,96 @@ class Organism:
 
             return gradient
 
-        def exprlev_resc_RGB(values,RGB_scale):
+        def exprlev_resc_RGB(RGB_scale):
             """
-            This function find the RGB codes for each intensity value in the range of intensities from the lower
-            to the higher 
+            Version: 2.0
+
+            Name History: exprlev_resc_RGB
+
+            For each protein, this function find the RGB codes for each intensity value 
+            in the range of the intensities.
+            Returns two vctors one for the protein IDs and une for the RGB codes that represents
+            the relative intensities. 
+            The two vectors are ordered by RGB codes from the brightest to the darkest color.
+
+            INPUT : RGB_scale   [List]  List of tuples with the RGB codes converted in real numbers 
+                                        and ordered in ascending order. 
+
+            OUTPUT: proteins    [List]  Collection of protein IDs where the index of each ID is the index of
+                                        its RGB code in RGB_vec.
+                    RGB_vec     [List]  RGB codes in tuples.
             """
-            PSM_inten_values=values.values()
+            PSM_inten_values=self.prot_PSMint_index.values()
             inten_values=[int(x[1]) for x in PSM_inten_values]
             print('\nExtraction of protein intensities\n',inten_values)
             
+            rescaled_values = []  # Intensities are converted to the index for the corresponding color code
+
+            max_int_vec=[0]       # Intensities sorted in descending order
+            proteins=[]           # Protein IDs
+            int_scaled=[]         # Indexes referring to the RGB codes vctor
+            RGB_vec=[]            # RGB codes sorted in ascending order
+            
+            insert_ind=0
+            print('\n')
+            print('Number of proteins                             - ', len(self.prot_pep_index.keys())) # Number of proteins
+            print('Number of intensities to convert in RGB tuples - ', len(self.prot_pep_index.keys())) # Number of intensities 
+            print('\n')
+
+            # Print the proteins with their intensities and RGB codes sorted descending
+            print('Protein Number\t-\tProtein Code\t-\tProtein intensity\t-\tPosition of RGB value\t-\tRGB Tuple')                     # Must be the same
+            print('--------------\t \t------------\t \t-----------------\t \t---------------------\t \t---------')
+ 
+        
+            # ************************************************************************* #
+            # Based on the level of intensity, find the relative index in the RGB_scale #
+            # The resulting RGB code will represent the relative protein intensity      #
+            # translated in the proper color code.                                      # 
 
             old_max = max(inten_values)
             old_min = min(inten_values)
             new_max = len(RGB_scale)
             new_min = 0
 
-            rescaled_values = []
-
-            max_int_vec=[0]
-            #max_int_vec.append(values[0])
-            
-            proteins=[]
-            int_scaled=[]
-            RGB_vec=[]
-            
-            insert_ind=0
-            print('\n')
-            print('Number of proteins                             - ', len(self.prot_pep_index.keys())) # Number of proteins
-            print('Number of intensities to convert in RGB tuples - ', len(values))                     # Number of intensities 
-            print('\n')
-
-            print('Protein Number\t-\tProtein Code\t-\tProtein intensity\t-\tPosition of RGB value\t-\tRGB Tuple')                     # Must be the same
-            print('--------------\t \t------------\t \t-----------------\t \t---------------------\t \t---------')
-            
-            for prot,PSM_intensity in values.items():
+            for prot,PSM_intensity in self.prot_PSMint_index.items():
                 old_value = int(PSM_intensity[1])
                 
                 NewValue = int((((old_value - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min)
                 if NewValue ==0: NewValue=1 # 0 values for the less intense proteins use to assign the higer intensity RGB code
                                             # For this reason, force to 1
                 grather=False 
-                for ind, val in enumerate(max_int_vec):
-                    if old_value > val:
+                for ind, val in enumerate(max_int_vec): # Find the position of the current intensity 
+                    if old_value > val:                 # in the intensities vector.
                         insert_ind=ind
                         grather=True
                         break
                         
-                if not grather: 
-                    proteins.append(prot)
-                    max_int_vec.append(old_value)
+                if not grather:                         # If the current intensity is the SMALLEST intensty in the vector:
+                    proteins.append(prot)               # - put this intensity in the last position of the vector.
+                    max_int_vec.append(old_value)       # - update all the correnspondent vectors.   
                     int_scaled.append(NewValue)
                     RGB_vec.append(RGB_tup[NewValue-1])
                 else:
-                    proteins.insert(insert_ind, prot)
-                    max_int_vec.insert(insert_ind, old_value)
-                    int_scaled.insert(insert_ind, NewValue)
+                    proteins.insert(insert_ind, prot)          # If the current intensity is AT LEAST greater than the smallest intensity in the vector:
+                    max_int_vec.insert(insert_ind, old_value)  # - put this intensity in the right position in the vector.  
+                    int_scaled.insert(insert_ind, NewValue)    # - update all the correnspondent vectors in the same position.
                     RGB_vec.insert(insert_ind,RGB_tup[NewValue-1])
                 rescaled_values.append(NewValue)
             
+            # ************************************************************************* #
+
+
+            # Print the content of the vectors used for the RGB assignment
             prot_number=0
             for i in range(0,len(max_int_vec[:-1])):
                 RGB=RGB_tup[int_scaled[i]-1]
-                #RGB2=str(round(RGB[0],4)) + '-' + str(round(RGB[1],4)) + '-' + str(round(RGB[1],4))
                 print(f'    {prot_number}\t\t-\t     {proteins[i]}\t-\t      {max_int_vec[i]}       \t-\t         {int_scaled[i]-1}       \t-\t{RGB}   ')
                 #print(f'\t\t\t\t\t\t\t\t\t{RGB_vec[i]}')
                 prot_number+=1
-            return rescaled_values, proteins, RGB_vec
+            return proteins, RGB_vec
             
-
-
-        def vectorise_RGB_tuples(RGB_tuples, prot_exp_resc):
-            
-            prot_expressions_RGB=[]
-
-            for RGB_pos in prot_exp_resc:
-                #RGB_toup = [round(num,3) for num in RGB_tuples[RGB_pos-1]]
-                RGB_toup = [num for num in RGB_tuples[RGB_pos-1]]
-                RGB_code = str(RGB_toup[0]) + ',' + str(RGB_toup[1]) + ',' + str(RGB_toup[1])
-                prot_expressions_RGB.append(RGB_code)
-
-            return prot_expressions_RGB
-
-
-        # ------- MAIN ------- protein_PSM_int_index
-        
+                                       #  ------- MAIN -------- 
+                                       #  protein_PSM_int_index
         intensities={}
 
         max_intensity=0
@@ -615,23 +621,22 @@ class Organism:
         
         print('Protein-Peptide Index - Protein-CDS Index')
         print(f'               {len(self.prot_pep_index)}     -     {len(self.prot_CDS_index)}')
-        RGB_tup = generate_color_gradient(color_lst=color_gradient,
-                                             reverse_gradient=False)#'gray',
-        #print(RGB_tup)
         
+        RGB_tup = generate_color_gradient(color_lst=color_gradient, reverse_gradient=False)#'gray',
+        
+        # ----------------------- #
+        # DRAW THE COLOR GRADIENT #
+        # ----------------------- #
         fig, ax = plt.subplots(figsize=(8, 5))
         ax.yaxis.set_visible(False)
-        
         # x_tick_locations=range(0,max_intensity-min_intensity,10)
         # x_tick_labels=range(min_intensity,max_intensity,1000)
         # plt.xticks(x_tick_locations, x_tick_labels)
-        
         for x, colorRGB in enumerate(RGB_tup):
             ax.axvline(x, color=colorRGB, linewidth=4)
-
         plt.show() 
+        # ----------------------- #
 
-        #prot_expressions_rescaled = exprlev_resc_RGB(intensities,RGB_tup)
         #PRINT THE RGB TUPLES FOR THE COLOR GRADIENT
         print('RGB TUPLES\n----------')
         rgbind=0
@@ -639,26 +644,20 @@ class Organism:
             print(rgbind,'  -  ',round(rgb[0],3),'-',round(rgb[1],3),'-',round(rgb[2],3))
             rgbind+=1
 
-        prot_expressions_rescaled, prot_vec, RGB_vec= exprlev_resc_RGB(self.prot_PSMint_index,RGB_tup)
-        print('PROTEIN EXPRESSION INDEXED IN RGB VECTOR POSITION\n-------------------------------------------------')
-        print(prot_expressions_rescaled)
+        # +++++++++++++++++++++++++++++++++++++++++++ #
+        #      Convert intensities in RGB codes       #
+        prot_vec, RGB_vector= exprlev_resc_RGB(RGB_tup) 
+        # +++++++++++++++++++++++++++++++++++++++++++ #
 
-        print('PROTEIN EXPRESSION CONVERTED IN RGB CODES (real numbers)\n--------------------------------------------------------')
-        prot_expressions_RGB=vectorise_RGB_tuples(RGB_tup, prot_expressions_rescaled)
-        for i in prot_expressions_RGB:
-            print(i)
-        #print(prot_expressions_RGB)
-
-        print(f'{len(prot_expressions_RGB)} - {len(self.prot_CDS_index)}')
+        print(f'{len(prot_vec)} - {len(self.prot_CDS_index)}')
         #print(prot_expressions_RGB)
         #print(self.prot_CDS_index)
 
+        # Update the dictionary of self.prot_CDS_index with the RGB intensities
         print('\nUPDATING PROTEIN INDEX WITH RGB INTENSITIES\n-------------------------------------------')
-
         ind=0
-        #for prot, PSMint in self.prot_pep_index.items(): # Update the dictionary of self.prot_CDS_index with the RGB intensities
-        for ind, prot in enumerate(prot_vec):
-            RGB_tup=RGB_vec[ind]
+        for ind, prot in enumerate(prot_vec): 
+            RGB_tup=RGB_vector[ind]
             RGB_code = str(RGB_tup[0]) + ',' + str(RGB_tup[1]) + ',' + str(RGB_tup[2])    
             self.prot_PSMint_index[prot].append(RGB_code)#prot_expressions_RGB[ind]
             print(prot,'-',self.prot_PSMint_index[prot][-1])#prot_expressions_RGB[ind]
@@ -668,6 +667,16 @@ class Organism:
 
     def initialise_indexes(self, annot_format='gff3'):
         """
+        Version: 1.0
+
+        Name History: initialise_indexes
+
+        This function create the index for 
+            - CDS     ---> annotation - in the genome
+            - Protein ---> CDS        - that cotribute to the protein production
+            - Protein ---> Peptides   - that confirmed the protein existence in the proteomics data
+            - Peptide ---> Proteins   - where the peptide sequence has been found
+
         """
         print("""
                **********************
@@ -682,8 +691,6 @@ class Organism:
             self.peptide_protein_index(self.input_table)
         except:
             print('Proteomics data not found')    
-    
-        self.protein_PSM_int_index()
 
 
 # ****************************************************************************************** #
@@ -902,6 +909,8 @@ class Organism:
         OUTPUT:
         """
         
+        self.protein_PSM_int_index() # Generates the color code for protein intensities
+
         if prot_list==[]:
             prot_list=self.prot_pep_index.keys()
 
@@ -1115,7 +1124,7 @@ class Organism:
         filtration. However, the peptide sequences already updated with the PTM encoding 
         will not be modified in all instance's attributes.  
 
-        INPUT :
+        INPUT : out_file_name   [Str]   File name for the output file
         OUTPUT:
         """
         
@@ -1476,15 +1485,6 @@ class Organism:
         self.make_sep_file(pep_table_fn, self.dummy_input_matrix, sep='\t')
     
 
-
-    def Proteogenome_Demo(self, prot_quantity=10, pep_length_range=[], 
-                          pep_int_range=[50,5000], PTM_ptg=0):
-        """
-        This function generates dummy peptide table
-        INPUT :
-        OUTPUT:
-        """
-
     def make_sep_file(self, out_file_name, input_array, sep=''):
         """
         Version: 1.0
@@ -1545,89 +1545,4 @@ class Organism:
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
 #                                              M - A - I - N                                           #
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/ #
-
-if __name__ == '__main__':
-    
-    GFF3='C:/Users/Giammarco Ferrari/Documents/PoGo4Virus/Source HCMV files/HCMV_ComplRecord.gff3'
-    FASTA='C:/Users/Giammarco Ferrari/Documents/PoGo4Virus/Source HCMV files/HCMV_CodingSeq_AminoAcidsFASTA.txt'
-    
-    print("""\n\n
-                   *****************
-                   * LOADING FILES *
-                   *****************       
-          """)
-
-
-    print(GFF3)
-    HCMV_instance=HCMV(FASTA, GFF3)
-    print(f'String representation of the object ==> {HCMV_instance}')
-    print(f'Filename for the FASTA file         ==> {HCMV_instance.FASTA_filename}')
-    print(f'Filename for the GFF3  file         ==> {HCMV_instance.annot_filename}\n')
-
-    print("""\n\n
-                   *********************
-                   * FASTA PREPARATION *
-                   *********************       
-          """)
-
-    print('***** FASTA sequence in LIST *****\n')
-    FASTA_lst=HCMV_instance.FASTA_lst
-    HCMV_instance.print_lst(FASTA_lst, 30)
-    print('\n' * 2)
-
-    print('+++++++++ FASTA rectification (PoGo COMPLIANT) +++++++++\n')
-    FASTA_lst=HCMV_instance.rectify_rows(FASTA_lst, target_sub_str=[('lcl|NC_006273.2_prot_',''),('[',''),
-                                                                    (']',''),('..',':'),
-                                                                    ('gene-',''), ('rna-','')]) 
-    FASTA_lst=HCMV_instance.locus_tag_substitution(FASTA_lst)
-    
-    HCMV_instance.print_lst(FASTA_lst, 30)
-
-    print("""\n\n
-                    **************************
-                    * ANNOTATION PREPARATION *
-                    **************************       
-          """)
-    
-    print('***** ANNOTATIONS GFF3 in list *****\n')
-    GFF3_lst=HCMV_instance.annot_lst
-    HCMV_instance.print_lst(GFF3_lst, 30)
-    print('\n' * 2)
-
-    HCMV_instance.check_format(GFF3_lst)
-
-    print("""\n\n
-                   ***********************
-                   * USE AGAT TO CONVERT *
-                   *    GFF3 INTO GTF    *
-                   ***********************       
-          \n\n""")
-
-    GTF='C:/Users/Giammarco Ferrari/Documents/PoGo4Virus/HHV5_ge_ex_CD_mR_Gid_corrgene.gtf'
-
-    print('***** ANNOTATIONS GTF in list *****\n')
-    GTF_lst=HCMV_instance.file_to_lst(GTF)
-
-    HCMV_instance.check_format(GTF_lst)
-
-    GTF_lst=HCMV_instance.rectify_rows(GTF_lst, target_sub_str=[('gene-',''), ('rna-','')])
-
-    HCMV_instance.print_lst(GTF_lst, 30)
-
-    print(f'Uploading the GFF3 file in a df')
-    HCMV_instance.annot_to_df(GFF3_lst)
-    print(HCMV_instance.annotations_df)
-    print(f'**done** \n')
-
-    print(f'Creating Protein index')
-    print(' ************ DISABLED IN THE CODE ************ ')
-    # #HCMV_instance.protein_index(HCMV_instance.GFF3_to_df)
-    # print(HCMV_instance.prot_index)
-    # print(f'**done** \n')S
-
-    print('Create .bed track for the whole protein set of the HCMV')
-
-    # protein_list_test=['RL1', 'UL29', 'UL150A']
-    # HCMV_instance.protein_track()
-    # print('hello world ....... at the end!!!!!')
 
