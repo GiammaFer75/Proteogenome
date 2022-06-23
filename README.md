@@ -232,7 +232,7 @@ As stated in the [Peptide Map Overview](#hpwpepm) the possibility to map amino a
   | GTF    | **gene_id**       | **gene_id** *"gene-HHV5wtgp001";*      |
   | GTF    | **transcript_id** | **transcript_id** *"rna-HHV5wtgp001";* |
 
-PoGo can connect the FASTA alignmente to the genomic coordinates in the GTF annotations only if the tag values in FASTA and GTF are **unique**.
+PoGo can connect the FASTA alignment to the genomic coordinates in the GTF annotations only if the tag values in FASTA and GTF are **unique**.
 
 However, these values are not guaranteed to be unique. For this reason, Proteogenome provides the functions that allow to manipulate the file formats. For an example of use see [Appendix](#appendix).
 
