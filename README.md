@@ -242,6 +242,8 @@ In this tutorial will be discussed the PoGo usage through its graphic user inter
 
 ![](Images/PoGoInterface.JPG)
 
+In the section **Output Format** tick BED and PTM BED.
+
 ---------------------------------------------------------------------------------------------------
 
 <a name="pu"/></a></br>
